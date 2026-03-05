@@ -2,7 +2,7 @@ app_name = "benchmark_project"
 app_title = "Benchmark Project"
 app_publisher = "Emeron Infospace"
 app_description = "Benchmark Project"
-app_email = "ibalajib97@gmail.com"
+app_email = "info@emeron.io"
 app_license = "mit"
 
 # Apps
@@ -43,7 +43,10 @@ app_license = "mit"
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
+doctype_js = {"Quotation" : "public/js/quotation.js",
+              "Project": "public/js/project.js",
+              "Material Request": "public/js/material_request.js"
+              }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -82,8 +85,8 @@ app_license = "mit"
 # Installation
 # ------------
 
-# before_install = "benchmark_project.install.before_install"
-# after_install = "benchmark_project.install.after_install"
+after_install="benchmark_project.setup.after_install"
+before_uninstall="benchmark_project.setup.before_uninstall"
 
 # Uninstallation
 # ------------
@@ -144,6 +147,31 @@ app_license = "mit"
 # 		"on_trash": "method"
 # 	}
 # }
+doc_events = {
+    "Sales Invoice": {
+        "on_submit": "benchmark_project.events.sales_invoice.on_submit",
+        "on_cancel": "benchmark_project.events.sales_invoice.on_cancel"
+    },
+    "Task": {
+        "on_update": "benchmark_project.events.task.update_parent_task_progress"
+    },
+}
+
+app_include_js = [
+    "/assets/benchmark_project/js/project_calendar.js"
+]
+
+fixtures = [
+    {
+        "dt": "Custom HTML Block",
+        "filters": [
+            ["name", "in", [
+                "Task Dashboard"
+            ]]
+        ]
+    }
+]
+
 
 # Scheduled Tasks
 # ---------------
@@ -181,9 +209,9 @@ app_license = "mit"
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
 # along with any modifications made in other Frappe apps
-# override_doctype_dashboards = {
-# 	"Task": "benchmark_project.task.get_dashboard_data"
-# }
+override_doctype_dashboards = {
+	"Quotation": "benchmark_project.events.quotation_dashboard.get_dashboard_data"
+}
 
 # exempt linked doctypes from being automatically cancelled
 #

@@ -1,0 +1,162 @@
+{
+ "charts": [],
+ "content": "[{\"id\":\"pN0HC13nKh\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Benchmark</span>\",\"col\":12}},{\"id\":\"rYoNePPEOB\",\"type\":\"paragraph\",\"data\":{\"text\":\"Master Doctypes\",\"col\":12}},{\"id\":\"fxGRgDJTMW\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project\",\"col\":3}},{\"id\":\"MpCBwF7CQq\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project Schedule\",\"col\":3}},{\"id\":\"kUxbZBT7vo\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project Team\",\"col\":3}},{\"id\":\"Xys9X6NTo8\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project Type\",\"col\":3}},{\"id\":\"EqmhcGYxea\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Bill of Quantity\",\"col\":3}},{\"id\":\"pRod3E_4rp\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Quotation\",\"col\":3}},{\"id\":\"DSk9ACLUgF\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"7jFKw0EjHx\",\"type\":\"card\",\"data\":{\"card_name\":\"Project Management\",\"col\":4}},{\"id\":\"NyeMjKhSh2\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports & Analytics\",\"col\":4}},{\"id\":\"rPjAZWfVaa\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"3AInNP6eQi\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Task Dashboard\",\"col\":12}}]",
+ "creation": "2026-02-03 12:56:44.746047",
+ "custom_blocks": [
+  {
+   "custom_block_name": "Task Dashboard",
+   "label": "Task Dashboard"
+  }
+ ],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "review",
+ "idx": 0,
+ "indicator_color": "green",
+ "is_hidden": 0,
+ "label": "Benchmark",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Project Management",
+   "link_count": 4,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Project",
+   "link_count": 0,
+   "link_to": "Project",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Task",
+   "link_count": 0,
+   "link_to": "Task",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Bill of Quantity",
+   "link_count": 0,
+   "link_to": "Bill of Quantity",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Project Schedule",
+   "link_count": 0,
+   "link_to": "Project Schedule",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Reports & Analytics",
+   "link_count": 2,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Project Wise",
+   "link_count": 0,
+   "link_to": "Project Wise",
+   "link_type": "Report",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Project Completion Report",
+   "link_count": 0,
+   "link_to": "Project Completion Report",
+   "link_type": "Report",
+   "onboard": 1,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-02-17 11:15:54.166066",
+ "modified_by": "Administrator",
+ "module": "Benchmark Project",
+ "name": "Benchmark",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 2.0,
+ "shortcuts": [
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Quotation",
+   "link_to": "Quotation",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Project",
+   "link_to": "Project",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Project Schedule",
+   "link_to": "Project Schedule",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Project Team",
+   "link_to": "Project Team",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Project Type",
+   "link_to": "Project Type",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Bill of Quantity",
+   "link_to": "Bill of Quantity",
+   "stats_filter": "[]",
+   "type": "DocType"
+  }
+ ],
+ "title": "Benchmark"
+}
