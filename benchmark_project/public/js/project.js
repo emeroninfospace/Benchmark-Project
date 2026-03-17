@@ -61,6 +61,31 @@ frappe.ui.form.on('Project', {
 					__("View")
 				);
         }
+        frm.add_custom_button(__('Subcontract Work Order'), function() {
+            create_subcontracting_order(frm);
+        }, __('Create'));
+        
+        frm.add_custom_button(__('Subcontracting Receipt'), function() {
+            create_subcontracting_receipt(frm);
+        }, __('Create'));
         
     }
 });
+
+
+
+function create_subcontracting_order(frm) {
+    frappe.new_doc('Subcontract Work Order', {
+        'project': frm.doc.name,
+        'company': frm.doc.company || frappe.defaults.get_default('company'),
+        'transaction_date': frappe.datetime.nowdate()
+    });
+}
+
+function create_subcontracting_receipt(frm) {
+    frappe.new_doc('Subcontracting Receipt', {
+        'project': frm.doc.name,
+        'company': frm.doc.company || frappe.defaults.get_default('company'),
+        'posting_date': frappe.datetime.nowdate()
+    });
+}
