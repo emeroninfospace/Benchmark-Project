@@ -36,36 +36,8 @@ CREATE_FIELDS={
                 "label": "LPO Date",
                 "fieldtype": "Date",
                 "insert_after": "lpo_ref"
-            },
-            {
-                "fieldname": "custom_delivery_schedule_section",
-                "label": "Materials Delivery Item",
-                "fieldtype": "Section Break",
-                "insert_after": "net_total",
-                "collapsible": 1
-            },
-            {
-            "fieldname": "custom_materials_delivery_time",
-            "label": "Materials Delivery Time",
-            "fieldtype": "Table",
-            "options": "Materials Delivery Time",
-            "insert_after": "custom_delivery_schedule_section"
-            },
-            {
-                "fieldname": "custom_exclusions_details",
-                "label": "Exclusions Details",
-                "fieldtype": "Section Break",
-                "insert_after": "custom_materials_delivery_time",
-                "collapsible": 1
-            },
-            {
-            "fieldname": "custom_exclusions_items",
-            "label": "Exclusions Items",
-            "fieldtype": "Table",
-            "options": "Exclusions",
-            "insert_after": "Exclusions Details"
             }
-
+           
 
         ],
         "Project": [
