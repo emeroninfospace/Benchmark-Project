@@ -170,5 +170,23 @@ CREATE_FIELDS={
             "in_list_view": 1,
             "columns": 1
         }
-    ]
+    ],
+    "Task": [
+            {
+                "fieldname": "custom_bill_of_quantity",
+                "label": "Bill of Quantity",
+                "fieldtype": "Link",
+                "options" : "Bill of Quantity",
+                "read_only": 1,
+                "insert_after": "parent_task"
+            },
+            {
+                "fieldname": "custom_project_schedule",
+                "label": "Project Schedule",
+                "fieldtype": "Link",
+                "options" : "Project Schedule",
+                "read_only": 1,
+                "insert_after": "custom_bill_of_quantity",
+            },
+        ]
 }
