@@ -160,5 +160,15 @@ CREATE_FIELDS={
                 "read_only": 1,
                 "insert_after": "custom_bill_of_quantity",
             },
-        ]
+        ],
+    "Journal Entry": [
+        {
+                "fieldname": "custom_project",
+                "label": "Project",
+                "fieldtype": "Link",
+                "options" : "Project",
+                "read_only": 1,
+                "insert_after": "tax_withholding_category"
+        }
+    ]
 }
