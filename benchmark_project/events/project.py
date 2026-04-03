@@ -60,3 +60,26 @@ def create_material_request(name):
     # request.submit()
 
     return request.name
+
+@frappe.whitelist()
+def make_project_budget(project):
+    project_doc = frappe.get_doc("Project", project)
+
+    ps = frappe.new_doc("Project Budget")
+    ps.project = project_doc.name
+    ps.boq_reference = project_doc.custom_bill_of_quantity
+
+    if project_doc.custom_bill_of_quantity:
+        boq = frappe.get_doc(
+            "Bill of Quantity",
+            project_doc.custom_bill_of_quantity
+        )
+
+        for row in boq.boq_template:
+            budget = ps.append("budget_items")
+            budget.category = row.boq_template
+            budget.actual_amount = row.total_amount
+
+
+    ps.insert(ignore_permissions=True)
+    return ps.name
