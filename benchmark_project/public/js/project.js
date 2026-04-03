@@ -24,6 +24,24 @@ frappe.ui.form.on('Project', {
                 },
                 __("Create")
             );
+            frm.add_custom_button(
+                __("Project Budget"),
+                () => {
+                    frappe.call({
+                        method: "benchmark_project.events.project.make_project_budget",
+                        args: {
+                            project: frm.doc.name
+                        },
+                        callback: function (r) {
+                            console.log(r);
+                            if (r.message) {
+                                frappe.set_route("Form", "Project Budget", r.message);
+                            }
+                        }
+                    });
+                },
+                __("Create")
+            );
             if (frm.doc.custom_boq_items) {
             frm.add_custom_button(__('Material Request'), function () {
                 frappe.call({
