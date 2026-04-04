@@ -17,7 +17,12 @@
   "column_break_cawq",
   "cost_center",
   "section_break_kxsv",
-  "items"
+  "items",
+  "section_break_huvx",
+  "total_quantity",
+  "column_break_pxof",
+  "total_currency",
+  "amended_from"
  ],
  "fields": [
   {
@@ -79,19 +84,50 @@
    "fieldname": "items",
    "fieldtype": "Table",
    "label": "Items",
-   "options": "Subcontracting Order Item"
+   "options": "Subcontract Work Item"
   },
   {
    "fieldname": "bill_of_quantity",
    "fieldtype": "Link",
    "label": "Bill of Quantity",
    "options": "Bill of Quantity"
+  },
+  {
+   "fieldname": "section_break_huvx",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "total_quantity",
+   "fieldtype": "Float",
+   "label": "Total Quantity",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_pxof",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_currency",
+   "fieldtype": "Currency",
+   "label": "Total Currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Subcontract Work Order",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
+ "is_submittable": 1,
  "links": [],
- "modified": "2026-03-17 11:42:31.689204",
+ "modified": "2026-04-04 14:09:54.490229",
  "modified_by": "Administrator",
  "module": "Benchmark Project",
  "name": "Subcontract Work Order",
