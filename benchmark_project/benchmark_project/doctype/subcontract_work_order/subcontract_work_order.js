@@ -3,23 +3,23 @@
 
 frappe.ui.form.on("Subcontract Work Order", {
     refresh(frm) {
-
+        calculate_totals(frm);
         if (frm.doc.docstatus === 1 && frm.doc.supplier) {
 
-            frm.add_custom_button("Purchase Order", () => {
-                frappe.call({
-                    method: "benchmark_project.benchmark_project.doctype.subcontract_work_order.subcontract_work_order.create_purchase_order",
-                    args: {
-                        docname: frm.doc.name
-                    },
-                    callback(r) {
-                        if (r.message) {
-                            frappe.msgprint("Purchase Order Created: " + r.message);
-                            frm.reload_doc();
-                        }
-                    }
-                });
-            }, "Create");
+            // frm.add_custom_button("Purchase Order", () => {
+            //     frappe.call({
+            //         method: "benchmark_project.benchmark_project.doctype.subcontract_work_order.subcontract_work_order.create_purchase_order",
+            //         args: {
+            //             docname: frm.doc.name
+            //         },
+            //         callback(r) {
+            //             if (r.message) {
+            //                 frappe.msgprint("Purchase Order Created: " + r.message);
+            //                 frm.reload_doc();
+            //             }
+            //         }
+            //     });
+            // }, "Create");
 
             frm.add_custom_button("Subcontract Invoice", () => {
                 frappe.call({
@@ -41,7 +41,18 @@ frappe.ui.form.on("Subcontract Work Order", {
 });
 
 frappe.ui.form.on('Subcontract Work Item', {
-    item_code: function(frm, cdt, cdn) {
+
+    items_add(frm, cdt, cdn) {
+        let row = locals[cdt][cdn];
+
+        if (!row.quantity) {
+            row.quantity = 1;
+        }
+
+        calculate_row_amount(frm, cdt, cdn);
+    },
+
+    item_code(frm, cdt, cdn) {
         let row = locals[cdt][cdn];
 
         if (row.item_code) {
@@ -50,17 +61,17 @@ frappe.ui.form.on('Subcontract Work Item', {
             }, 'price_list_rate').then(r => {
                 if (r.message) {
                     row.rate = r.message.price_list_rate || 0;
-                    refresh_field('items');
+                    calculate_row_amount(frm, cdt, cdn);
                 }
             });
         }
     },
 
-    quantity: function(frm, cdt, cdn) {
+    quantity(frm, cdt, cdn) {
         calculate_row_amount(frm, cdt, cdn);
     },
 
-    rate: function(frm, cdt, cdn) {
+    rate(frm, cdt, cdn) {
         calculate_row_amount(frm, cdt, cdn);
     }
 });

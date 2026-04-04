@@ -83,9 +83,9 @@ frappe.ui.form.on('Project', {
             create_subcontracting_order(frm);
         }, __('Create'));
         
-        frm.add_custom_button(__('Subcontracting Receipt'), function() {
-            create_subcontracting_receipt(frm);
-        }, __('Create'));
+        // frm.add_custom_button(__('Subcontracting Receipt'), function() {
+        //     create_subcontracting_receipt(frm);
+        // }, __('Create'));
         
     }
 });
@@ -96,7 +96,8 @@ function create_subcontracting_order(frm) {
     frappe.new_doc('Subcontract Work Order', {
         'project': frm.doc.name,
         'company': frm.doc.company || frappe.defaults.get_default('company'),
-        'transaction_date': frappe.datetime.nowdate()
+        'transaction_date': frappe.datetime.nowdate(),
+        'bill_of_quantity': frm.doc.custom_bill_of_quantity
     });
 }
 

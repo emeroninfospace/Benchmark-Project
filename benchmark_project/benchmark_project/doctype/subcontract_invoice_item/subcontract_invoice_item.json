@@ -28,6 +28,7 @@
    "label": "Item Name"
   },
   {
+   "default": "1",
    "fieldname": "quantity",
    "fieldtype": "Float",
    "in_list_view": 1,
@@ -50,7 +51,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-04-04 14:12:11.928388",
+ "modified": "2026-04-04 16:10:44.199981",
  "modified_by": "Administrator",
  "module": "Benchmark Project",
  "name": "Subcontract Invoice Item",
