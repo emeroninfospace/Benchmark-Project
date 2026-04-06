@@ -16,9 +16,9 @@ def create_subcontract_invoice(docname):
     doc = frappe.get_doc("Subcontract Work Order", docname)
     
     existing = frappe.db.exists("Subcontract Invoice", {
-		"subcontract_work_order": doc.name,
-		"docstatus": ["!=", 2] 
-	})
+        "subcontract_work_order": doc.name,
+        "docstatus": ["!=", 2] 
+    })
 
     if existing:
         frappe.throw(f"Subcontract Invoice already exists: {existing}")
@@ -48,6 +48,21 @@ def create_subcontract_invoice(docname):
 
     invoice.total_quantity = total_qty
     invoice.total_amount = total_amt
+
+    for tax in doc.purchase_taxes_and_charges:
+        tax_row = invoice.append("purchase_taxes_and_charges", {})
+        tax_row.charge_type = tax.charge_type
+        tax_row.account_head = tax.account_head
+        tax_row.description = tax.description
+        tax_row.rate = tax.rate
+        tax_row.tax_amount = tax.tax_amount
+        tax_row.total = tax.total
+        tax_row.add_deduct_tax = tax.add_deduct_tax
+
+    invoice.taxes_and_charges_added = doc.taxes_and_charges_added
+    invoice.taxes_and_charges_deducted = doc.taxes_and_charges_deducted
+    invoice.total_taxes_and_charges = doc.total_taxes_and_charges
+    invoice.grand_total = doc.grand_total
 
     invoice.insert(ignore_permissions=True)
 

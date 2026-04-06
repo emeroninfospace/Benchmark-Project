@@ -47,6 +47,9 @@ frappe.ui.form.on("Subcontract Invoice", {
                 }
             }
         });
+    },
+    items_add(frm) {
+        calculate_invoice_totals(frm);
     }
 });
 
@@ -56,20 +59,23 @@ frappe.ui.form.on("Subcontract Invoice Item", {
     },
     rate(frm, cdt, cdn) {
         calculate_invoice_row(frm, cdt, cdn);
+    },
+    items_remove(frm) {
+        calculate_invoice_totals(frm);
     }
 });
 
 frappe.ui.form.on("Purchase Taxes and Charges", {
-    rate(frm, cdt, cdn) {
-        calculate_tax_row(frm, cdt, cdn);
-    },
-    tax_amount(frm) {
+    rate(frm) {
         calculate_taxes(frm);
     },
-    charge_type(frm, cdt, cdn) {
-        calculate_tax_row(frm, cdt, cdn);
+    charge_type(frm) {
+        calculate_taxes(frm);
     },
     add_deduct_tax(frm) {
+        calculate_taxes(frm);
+    },
+    tax_amount(frm) {
         calculate_taxes(frm);
     }
 });
@@ -92,43 +98,59 @@ function calculate_invoice_totals(frm) {
 
     frm.set_value("total_quantity", total_qty);
     frm.set_value("total_amount", total_amt);
+    frm.refresh_field("total_amount");
     calculate_taxes(frm);
 }
 
-function calculate_tax_row(frm, cdt, cdn) {
-    let row = locals[cdt][cdn];
-    let base_amount = frm.doc.total_amount || 0;
 
-    if (row.charge_type === "On Net Total") {
-        row.tax_amount = (base_amount * (row.rate || 0)) / 100;
-    }
-    row.total = row.rate * row.tax_amount
-
-    refresh_field("purchase_taxes_and_charges");
-    calculate_taxes(frm);
-}
 
 function calculate_taxes(frm) {
+    let net_total = frm.doc.total_amount || 0;
+    let running_total = net_total;
+
     let added = 0;
     let deducted = 0;
 
-    (frm.doc.purchase_taxes_and_charges || []).forEach(row => {
-        let amt = row.tax_amount || 0;
+    (frm.doc.purchase_taxes_and_charges || []).forEach((row, index) => {
+        let tax_amount = 0;
+
+        if (row.charge_type === "On Net Total") {
+            tax_amount = (net_total * (row.rate || 0)) / 100;
+        }
+
+        else if (row.charge_type === "On Previous Row Amount" && index > 0) {
+            let prev = frm.doc.purchase_taxes_and_charges[index - 1];
+            tax_amount = ((prev.tax_amount || 0) * (row.rate || 0)) / 100;
+        }
+
+        else if (row.charge_type === "On Previous Row Total" && index > 0) {
+            tax_amount = ((running_total || 0) * (row.rate || 0)) / 100;
+        }
+
+        else if (row.charge_type === "Actual") {
+            tax_amount = row.tax_amount || 0;
+        }
+
+        row.tax_amount = tax_amount;
 
         if (row.add_deduct_tax === "Add") {
-            added += amt;
-        } else if (row.add_deduct_tax === "Deduct") {
-            deducted += amt;
+            running_total += tax_amount;
+            added += tax_amount;
+        } else {
+            running_total -= tax_amount;
+            deducted += tax_amount;
         }
+
+        row.total = running_total;
     });
 
+    refresh_field("purchase_taxes_and_charges");
+
     let total = added - deducted;
-    console.log('total', total)
 
     frm.set_value("taxes_and_charges_added", added);
     frm.set_value("taxes_and_charges_deducted", deducted);
     frm.set_value("total_taxes_and_charges", total);
 
-    let net_total = frm.doc.total_amount || 0;
-    frm.set_value("grand_total", net_total + total);
+    frm.set_value("grand_total", running_total);
 }
