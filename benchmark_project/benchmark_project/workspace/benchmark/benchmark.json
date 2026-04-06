@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"pN0HC13nKh\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Benchmark</span>\",\"col\":12}},{\"id\":\"rYoNePPEOB\",\"type\":\"paragraph\",\"data\":{\"text\":\"Master Doctypes\",\"col\":12}},{\"id\":\"fxGRgDJTMW\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project\",\"col\":3}},{\"id\":\"MpCBwF7CQq\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project Schedule\",\"col\":3}},{\"id\":\"kUxbZBT7vo\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project Team\",\"col\":3}},{\"id\":\"Xys9X6NTo8\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project Type\",\"col\":3}},{\"id\":\"EqmhcGYxea\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Bill of Quantity\",\"col\":3}},{\"id\":\"pRod3E_4rp\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Quotation\",\"col\":3}},{\"id\":\"DSk9ACLUgF\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"7jFKw0EjHx\",\"type\":\"card\",\"data\":{\"card_name\":\"Project Management\",\"col\":4}},{\"id\":\"NyeMjKhSh2\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports & Analytics\",\"col\":4}},{\"id\":\"rPjAZWfVaa\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"3AInNP6eQi\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Task Dashboard\",\"col\":12}}]",
+ "content": "[{\"id\":\"pN0HC13nKh\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Benchmark</span>\",\"col\":12}},{\"id\":\"rYoNePPEOB\",\"type\":\"paragraph\",\"data\":{\"text\":\"Master Doctypes\",\"col\":12}},{\"id\":\"fxGRgDJTMW\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project\",\"col\":3}},{\"id\":\"MpCBwF7CQq\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project Schedule\",\"col\":3}},{\"id\":\"kUxbZBT7vo\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project Team\",\"col\":3}},{\"id\":\"Xys9X6NTo8\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project Type\",\"col\":3}},{\"id\":\"EqmhcGYxea\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Bill of Quantity\",\"col\":3}},{\"id\":\"pRod3E_4rp\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Quotation\",\"col\":3}},{\"id\":\"t1NeP3maDe\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Subcontract Work Order\",\"col\":3}},{\"id\":\"bmBswt00zN\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Subcontract Invoice\",\"col\":3}},{\"id\":\"DSk9ACLUgF\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"7jFKw0EjHx\",\"type\":\"card\",\"data\":{\"card_name\":\"Project Management\",\"col\":4}},{\"id\":\"7Y6oVO6Cc9\",\"type\":\"card\",\"data\":{\"card_name\":\"Subcontract Info\",\"col\":4}},{\"id\":\"NyeMjKhSh2\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports & Analytics\",\"col\":4}},{\"id\":\"rPjAZWfVaa\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"3AInNP6eQi\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Task Dashboard\",\"col\":12}}]",
  "creation": "2026-02-03 12:56:44.746047",
  "custom_blocks": [
   {
@@ -70,8 +70,47 @@
   {
    "hidden": 0,
    "is_query_report": 0,
+   "label": "Subcontract Info",
+   "link_count": 3,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Quotation",
+   "link_count": 0,
+   "link_to": "Quotation",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Subcontract Work Order",
+   "link_count": 0,
+   "link_to": "Subcontract Work Order",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Subcontract Invoice",
+   "link_count": 0,
+   "link_to": "Subcontract Invoice",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
    "label": "Reports & Analytics",
-   "link_count": 2,
+   "link_count": 3,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -95,9 +134,19 @@
    "link_type": "Report",
    "onboard": 1,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "General Ledger",
+   "link_count": 0,
+   "link_to": "General Ledger",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-02-17 11:15:54.166066",
+ "modified": "2026-04-04 17:15:51.788997",
  "modified_by": "Administrator",
  "module": "Benchmark Project",
  "name": "Benchmark",
@@ -120,8 +169,24 @@
   {
    "color": "Grey",
    "doc_view": "List",
+   "label": "Subcontract Work Order",
+   "link_to": "Subcontract Work Order",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
    "label": "Project",
    "link_to": "Project",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Subcontract Invoice",
+   "link_to": "Subcontract Invoice",
    "stats_filter": "[]",
    "type": "DocType"
   },
