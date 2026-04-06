@@ -40,6 +40,7 @@ frappe.ui.form.on("Subcontract Invoice", {
                         row.rate = tax.rate;
                         row.account_head = tax.account_head;
                         row.add_deduct_tax = tax.add_deduct_tax;
+                        row.description = tax.description;
                     });
 
                     frm.refresh_field("purchase_taxes_and_charges");
