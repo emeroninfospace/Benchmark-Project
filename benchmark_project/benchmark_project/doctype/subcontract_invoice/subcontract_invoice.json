@@ -35,17 +35,18 @@
   "section_break_ymww",
   "purchase_taxes_and_charges",
   "section_break_fita",
-  "taxes_and_charges_added_company_currency",
-  "taxes_and_charges_deducted_company_currency",
-  "total_taxes_and_charges_company_currency",
   "column_break_tkga",
   "taxes_and_charges_added",
   "taxes_and_charges_deducted",
   "total_taxes_and_charges",
+  "column_break_htvq",
+  "taxes_and_charges_added_company_currency",
+  "taxes_and_charges_deducted_company_currency",
+  "total_taxes_and_charges_company_currency",
   "totals_section",
-  "base_grand_total",
+  "grand_total",
   "column_break_njrn",
-  "grand_total"
+  "base_grand_total"
  ],
  "fields": [
   {
@@ -216,6 +217,7 @@
   {
    "fieldname": "taxes_and_charges_added_company_currency",
    "fieldtype": "Currency",
+   "hidden": 1,
    "label": "Taxes and Charges Added (Company Currency)",
    "options": "Company:company:default_currency",
    "print_hide": 1,
@@ -224,6 +226,7 @@
   {
    "fieldname": "taxes_and_charges_deducted_company_currency",
    "fieldtype": "Currency",
+   "hidden": 1,
    "label": "Taxes and Charges Deducted (Company Currency)",
    "options": "Company:company:default_currency",
    "read_only": 1
@@ -231,6 +234,7 @@
   {
    "fieldname": "total_taxes_and_charges_company_currency",
    "fieldtype": "Currency",
+   "hidden": 1,
    "label": "Total Taxes and Charges (Company Currency)",
    "options": "Company:company:default_currency",
    "print_hide": 1,
@@ -272,6 +276,7 @@
   {
    "fieldname": "base_grand_total",
    "fieldtype": "Currency",
+   "hidden": 1,
    "label": "Grand Total (Company Currency)",
    "options": "Company:company:default_currency",
    "read_only": 1
@@ -287,13 +292,17 @@
    "label": "Grand Total",
    "options": "currency",
    "read_only": 1
+  },
+  {
+   "fieldname": "column_break_htvq",
+   "fieldtype": "Column Break"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-04-04 17:13:29.461217",
+ "modified": "2026-04-06 13:11:20.776806",
  "modified_by": "Administrator",
  "module": "Benchmark Project",
  "name": "Subcontract Invoice",
