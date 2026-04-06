@@ -46,6 +46,7 @@
   "totals_section",
   "grand_total",
   "column_break_njrn",
+  "paid_amount",
   "base_grand_total"
  ],
  "fields": [
@@ -296,13 +297,19 @@
   {
    "fieldname": "column_break_htvq",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "paid_amount",
+   "fieldtype": "Currency",
+   "label": "Paid Amount",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-04-06 13:11:20.776806",
+ "modified": "2026-04-06 17:56:46.439271",
  "modified_by": "Administrator",
  "module": "Benchmark Project",
  "name": "Subcontract Invoice",

@@ -20,7 +20,9 @@ frappe.ui.form.on("Subcontract Work Order", {
 
         }
     },
-
+    status(frm) {
+        set_indicator(frm);
+    },
     purchase_taxes_and_charges_template(frm) {
         if (!frm.doc.purchase_taxes_and_charges_template) return;
 
@@ -185,4 +187,25 @@ function calculate_taxes(frm) {
     frm.set_value("total_taxes_and_charges", total);
 
     frm.set_value("grand_total", running_total);
+}
+
+
+function set_indicator(frm) {
+    if (!frm.doc.status) return;
+
+    let color = "gray";
+
+    if (frm.doc.status === "Draft") {
+        color = "gray";
+    } else if (frm.doc.status === "To Receive and Bill") {
+        color = "orange";
+    } else if (frm.doc.status === "To Bill") {
+        color = "blue";
+    } else if (frm.doc.status === "Partially Billed") {
+        color = "yellow";
+    } else if (frm.doc.status === "Paid") {
+        color = "green";
+    }
+
+    frm.page.set_indicator(frm.doc.status, color);
 }

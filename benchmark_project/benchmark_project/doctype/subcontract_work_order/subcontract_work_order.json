@@ -9,6 +9,7 @@
   "subcontract_work_order_section",
   "supplier",
   "transaction_date",
+  "status",
   "column_break_hrkg",
   "company",
   "bill_of_quantity",
@@ -281,13 +282,22 @@
   {
    "fieldname": "column_break_fqpi",
    "fieldtype": "Column Break"
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "\nDraft\nTo Receive and Bill\nTo Bill\nPartially Billed\nPaid",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-04-06 13:26:45.311924",
+ "modified": "2026-04-06 17:21:28.246096",
  "modified_by": "Administrator",
  "module": "Benchmark Project",
  "name": "Subcontract Work Order",
