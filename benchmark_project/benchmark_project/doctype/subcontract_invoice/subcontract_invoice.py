@@ -5,9 +5,13 @@ import frappe
 from frappe.model.document import Document
 from erpnext.accounts.general_ledger import make_gl_entries
 from frappe.utils import getdate
+from erpnext.controllers.taxes_and_totals import calculate_taxes_and_totals
 
 
 class SubcontractInvoice(Document):
+    def validate(self):
+        self.calculate_totals()
+        self.calculate_taxes()   
 
     def on_submit(self):
         self.make_gl_entries()
@@ -24,7 +28,7 @@ class SubcontractInvoice(Document):
 
         if not payable_account or not expense_account:
             frappe.throw("Set Default Payable Account and Subcontract Account in Company")
-        
+
         if not self.cost_center:
             self.cost_center = frappe.db.get_value("Company", self.company, "cost_center")
 
@@ -33,34 +37,78 @@ class SubcontractInvoice(Document):
         gl_entries = []
 
         gl_entries.append(frappe._dict({
-		"account": expense_account,
-		"debit": self.total_amount,
-		"debit_in_account_currency": self.total_amount,
-		"against": payable_account,
-		"voucher_type": self.doctype,
-		"voucher_no": self.name,
-		"company": self.company,
-		"posting_date": posting_date,
-		"cost_center": self.cost_center,  
-		"project": self.project           
-	}))
+            "account": expense_account,
+            "debit": self.total_amount,
+            "debit_in_account_currency": self.total_amount,
+            "against": payable_account,
+            "voucher_type": self.doctype,
+            "voucher_no": self.name,
+            "company": self.company,
+            "posting_date": posting_date,
+            "cost_center": self.cost_center,
+            "project": self.project
+        }))
+
+        for tax in self.purchase_taxes_and_charges:
+            if tax.tax_amount:
+                gl_entries.append(frappe._dict({
+                    "account": tax.account_head,
+                    "debit": tax.tax_amount,
+                    "debit_in_account_currency": tax.tax_amount,
+                    "against": payable_account,
+                    "voucher_type": self.doctype,
+                    "voucher_no": self.name,
+                    "company": self.company,
+                    "posting_date": posting_date,
+                    "cost_center": self.cost_center,
+                    "project": self.project
+                }))
 
         gl_entries.append(frappe._dict({
-		"account": payable_account,
-		"credit": self.total_amount,
-		"credit_in_account_currency": self.total_amount,
-		"against": expense_account,
-		"party_type": "Supplier",
-		"party": self.supplier,
-		"voucher_type": self.doctype,
-		"voucher_no": self.name,
-		"company": self.company,
-		"posting_date": posting_date,
-		"cost_center": self.cost_center,  
-		"project": self.project
-	}))
+            "account": payable_account,
+            "credit": self.grand_total,
+            "credit_in_account_currency": self.grand_total,
+            "against": expense_account,
+            "party_type": "Supplier",
+            "party": self.supplier,
+            "voucher_type": self.doctype,
+            "voucher_no": self.name,
+            "company": self.company,
+            "posting_date": posting_date,
+            "cost_center": self.cost_center,
+            "project": self.project
+        }))
 
         make_gl_entries(gl_entries)
+    
+    def calculate_totals(self):
+        self.total_quantity = 0
+        self.total_amount = 0
+
+        for item in self.items:
+            item.amount = (item.quantity or 0) * (item.rate or 0)
+            self.total_quantity += item.quantity or 0
+            self.total_amount += item.amount or 0
+
+
+    def calculate_taxes(self):
+        added = 0
+        deducted = 0
+
+        for tax in self.purchase_taxes_and_charges:
+            if tax.charge_type == "On Net Total":
+                tax.tax_amount = (self.total_amount * (tax.rate or 0)) / 100
+
+            if tax.add_deduct_tax == "Add":
+                added += tax.tax_amount or 0
+            elif tax.add_deduct_tax == "Deduct":
+                deducted += tax.tax_amount or 0
+
+        self.taxes_and_charges_added = added
+        self.taxes_and_charges_deducted = deducted
+        self.total_taxes_and_charges = added - deducted
+
+        self.grand_total = (self.total_amount or 0) + self.total_taxes_and_charges
 
 
 @frappe.whitelist()
@@ -107,7 +155,8 @@ def make_payment_entry(invoice, mode_of_payment, amount):
     je.append("accounts", {
         "account": default_account,
         "debit_in_account_currency": amount,
-        "project": project
+        "project": project,
+        "cost_center": invoice_doc.cost_center
     })
 
     je.append("accounts", {
@@ -115,7 +164,8 @@ def make_payment_entry(invoice, mode_of_payment, amount):
         "credit_in_account_currency": amount,
         "party_type": "Supplier",
         "party": invoice_doc.supplier,
-        "project": project
+        "project": project,
+        "cost_center": invoice_doc.cost_center
     })
 
     je.insert(ignore_permissions=True)
@@ -135,3 +185,6 @@ def make_payment_entry(invoice, mode_of_payment, amount):
             frappe.db.set_value("Subcontract Work Order", invoice_doc.subcontract_work_order, "status", "Partially Billed")
 
     return je.name
+
+
+
