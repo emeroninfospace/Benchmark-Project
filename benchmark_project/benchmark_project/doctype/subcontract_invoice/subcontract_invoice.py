@@ -17,7 +17,8 @@ class SubcontractInvoice(Document):
         self.make_gl_entries()
 
     def on_cancel(self):
-        make_gl_entries([], cancel=1, voucher_type=self.doctype, voucher_no=self.name)
+        from erpnext.accounts.general_ledger import make_reverse_gl_entries
+        make_reverse_gl_entries(voucher_type=self.doctype, voucher_no=self.name)
 
     def make_gl_entries(self):
 
