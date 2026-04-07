@@ -7,7 +7,8 @@ from frappe.utils import getdate, add_days
 
 
 class SubcontractWorkOrder(Document):
-	pass
+	def on_submit(self):
+          self.db_set("status", "To Receive and Bill")
 
 
 
@@ -65,7 +66,7 @@ def create_subcontract_invoice(docname):
     invoice.grand_total = doc.grand_total
 
     invoice.insert(ignore_permissions=True)
-
+    doc.db_set("status", "To Bill")
     return invoice.name
 
 

@@ -61,3 +61,77 @@ class SubcontractInvoice(Document):
 	}))
 
         make_gl_entries(gl_entries)
+
+
+@frappe.whitelist()
+def make_payment_entry(invoice, mode_of_payment, amount):
+    invoice_doc = frappe.get_doc("Subcontract Invoice", invoice)
+
+    company = invoice_doc.company
+    project = invoice_doc.project
+
+    mop = frappe.get_doc("Mode of Payment", mode_of_payment)
+
+    default_account = None
+    for acc in mop.accounts:
+        if acc.company == company:
+            default_account = acc.default_account
+            break
+
+    if not default_account:
+        frappe.throw("No default account found for Mode of Payment")
+
+    payable_account = frappe.get_value("Company", company, "default_payable_account")
+
+    amount = frappe.utils.flt(amount, 2)
+
+    paid_amount = frappe.utils.flt(invoice_doc.paid_amount or 0)
+    grand_total = frappe.utils.flt(invoice_doc.grand_total)
+
+    outstanding = grand_total - paid_amount
+
+    if outstanding <= 0:
+        frappe.throw("Invoice already fully paid")
+
+    if amount > outstanding:
+        frappe.throw(f"Amount cannot exceed outstanding amount: {outstanding}")
+
+    je = frappe.new_doc("Journal Entry")
+    je.voucher_type = "Journal Entry"
+    je.company = company
+    je.posting_date = frappe.utils.nowdate()
+
+    je.cheque_no = invoice_doc.name
+    je.cheque_date = invoice_doc.creation
+
+    je.append("accounts", {
+        "account": default_account,
+        "debit_in_account_currency": amount,
+        "project": project
+    })
+
+    je.append("accounts", {
+        "account": payable_account,
+        "credit_in_account_currency": amount,
+        "party_type": "Supplier",
+        "party": invoice_doc.supplier,
+        "project": project
+    })
+
+    je.insert(ignore_permissions=True)
+    je.submit()
+
+    paid_amount += amount
+    outstanding = grand_total - paid_amount
+
+    frappe.db.set_value("Subcontract Invoice", invoice, "paid_amount", paid_amount)
+    
+
+    if paid_amount >= grand_total:
+        if invoice_doc.subcontract_work_order:
+            frappe.db.set_value("Subcontract Work Order", invoice_doc.subcontract_work_order, "status", "Paid")
+    else:
+        if invoice_doc.subcontract_work_order:
+            frappe.db.set_value("Subcontract Work Order", invoice_doc.subcontract_work_order, "status", "Partially Billed")
+
+    return je.name
