@@ -13,6 +13,8 @@
   "column_break_hrkg",
   "company",
   "bill_of_quantity",
+  "start_date",
+  "end_date",
   "accounting_dimensions_section_section",
   "project",
   "column_break_cawq",
@@ -291,13 +293,23 @@
    "label": "Status",
    "options": "\nDraft\nTo Receive and Bill\nTo Bill\nPartially Billed\nPaid",
    "read_only": 1
+  },
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "label": "Start Date"
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "label": "End Date"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-04-06 17:21:28.246096",
+ "modified": "2026-04-13 14:12:49.928311",
  "modified_by": "Administrator",
  "module": "Benchmark Project",
  "name": "Subcontract Work Order",
