@@ -47,6 +47,10 @@ doctype_js = {"Quotation" : "public/js/quotation.js",
               "Project": "public/js/project.js",
               "Material Request": "public/js/material_request.js"
               }
+
+override_doctype_class = {
+    "Quotation": "benchmark_project.events.quotation.CustomQuotation"
+}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}

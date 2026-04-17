@@ -96,3 +96,26 @@ def make_sales_invoice(source_name, target_doc=None):
     )
 
     return doclist
+
+
+import frappe
+import re
+from erpnext.selling.doctype.quotation.quotation import Quotation
+
+class CustomQuotation(Quotation):
+    def after_insert(self):
+        if self.amended_from:
+            base_name = re.sub(r'-R\d+$', '', self.amended_from)
+            base_name = re.sub(r'-(\d{1,2})$', '', base_name)
+            
+            existing = frappe.db.sql("""
+                SELECT COUNT(*) FROM `tabQuotation`
+                WHERE name LIKE %s
+            """, (f"{base_name}-R%",))[0][0]
+            
+            new_name = f"{base_name}-R{existing + 1}"
+            
+            frappe.rename_doc("Quotation", self.name, new_name, force=True)
+            self.name = new_name
+            self.amended_from = self.amended_from 
+            self.reload()
