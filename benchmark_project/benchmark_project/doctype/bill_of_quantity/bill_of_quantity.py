@@ -12,7 +12,8 @@ class BillofQuantity(Document):
 
     def validate(self):
         self.calculate_boq_totals()
-        # self.calculate_template_totals()
+        self.calculate_template_totals()
+        self.calculate_template_grand_total()
 
     def calculate_boq_totals(self):
         total_quantity = 0
@@ -34,19 +35,20 @@ class BillofQuantity(Document):
         for row in self.table_kfog:
             if not row.boq_template_id:
                 continue
-
             if row.boq_template_id not in totals:
-                totals[row.boq_template_id] = {
-                    "budget": 0,
-                }
-
+                totals[row.boq_template_id] = {"budget": 0}
             totals[row.boq_template_id]["budget"] += row.amount or 0
 
         for row in self.boq_template:
-            if row.boq_template in totals:
-                row.total_amount = totals[row.boq_template]["budget"]
-            else:
-                row.total_amount = 0
+            computed = totals.get(row.boq_template, {}).get("budget", 0)
+            if computed > 0:
+                row.total_amount = computed
+    
+    def calculate_template_grand_total(self):
+        grand_total = 0
+        for row in self.boq_template:
+            grand_total += row.total_amount or 0
+        self.total_amount = grand_total
 
 
 
