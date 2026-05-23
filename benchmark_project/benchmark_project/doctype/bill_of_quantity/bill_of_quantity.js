@@ -94,9 +94,7 @@ function calculate_boq_totals(frm) {
 frappe.ui.form.on("BOQ Template Child", {
     boq_template(frm, cdt, cdn) {
         let row = locals[cdt][cdn];
-
         if (!row.boq_template) return;
-
         load_boq_template_items(frm, row.boq_template);
     },
 
@@ -105,6 +103,10 @@ frappe.ui.form.on("BOQ Template Child", {
         if (row.boq_template) {
             remove_boq_template_items(frm, row.boq_template);
         }
+    },
+
+    total_amount(frm, cdt, cdn) {
+        calculate_template_grand_total(frm);
     }
 });
 
@@ -150,19 +152,27 @@ function calculate_template_totals(frm) {
         if (!row.boq_template_id) return;
 
         if (!totals[row.boq_template_id]) {
-            totals[row.boq_template_id] = {
-                budget: 0,
-            };
+            totals[row.boq_template_id] = { budget: 0 };
         }
 
         totals[row.boq_template_id].budget += flt(row.amount);
     });
 
-    // (frm.doc.boq_template || []).forEach(row => {
-    //     let data = totals[row.boq_template] || { budget: 0 };
-
-    //     row.total_amount = data.budget;
-    // });
+    (frm.doc.boq_template || []).forEach(row => {
+        let computed = totals[row.boq_template]?.budget || 0;
+        if (computed > 0) {
+            row.total_amount = computed;
+        }
+    });
 
     frm.refresh_field("boq_template");
+    calculate_template_grand_total(frm);
+}
+
+function calculate_template_grand_total(frm) {
+    let grand_total = 0;
+    (frm.doc.boq_template || []).forEach(row => {
+        grand_total += flt(row.total_amount);
+    });
+    frm.set_value('total_amount', grand_total);  
 }
