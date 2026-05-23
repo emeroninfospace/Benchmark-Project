@@ -158,11 +158,11 @@ function calculate_template_totals(frm) {
         totals[row.boq_template_id].budget += flt(row.amount);
     });
 
-    (frm.doc.boq_template || []).forEach(row => {
-        let data = totals[row.boq_template] || { budget: 0 };
+    // (frm.doc.boq_template || []).forEach(row => {
+    //     let data = totals[row.boq_template] || { budget: 0 };
 
-        row.total_amount = data.budget;
-    });
+    //     row.total_amount = data.budget;
+    // });
 
     frm.refresh_field("boq_template");
 }

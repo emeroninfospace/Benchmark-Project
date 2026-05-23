@@ -12,7 +12,7 @@ class BillofQuantity(Document):
 
     def validate(self):
         self.calculate_boq_totals()
-        self.calculate_template_totals()
+        # self.calculate_template_totals()
 
     def calculate_boq_totals(self):
         total_quantity = 0
