@@ -1,9 +1,11 @@
 frappe.ui.form.on('Task', {
  
 	refresh(frm) {
-		const user_roles = frappe.user_roles;
+		const is_supervisor    = frappe.user.has_role('Supervisor');
+		const is_system_manager = frappe.user.has_role('System Manager');
+		const is_admin          = frappe.session.user === 'Administrator';
  
-		if (user_roles.includes('Supervisor')) {
+		if (is_supervisor && !is_system_manager && !is_admin) {
 			lock_fields_for_supervisor(frm);
 		}
 	}
@@ -32,7 +34,6 @@ function lock_fields_for_supervisor(frm) {
 	frm.refresh_fields();
  
 	setTimeout(() => {
-		frm.$wrapper.find('.btn-new-comment').closest('.comment-box').hide();
 		frm.$wrapper.find('[data-action="assign"]').hide();
 		frm.$wrapper.find('.assigned-users .avatar-group').css('pointer-events', 'none');
 		frm.$wrapper.find('.form-assignments .btn').hide();
