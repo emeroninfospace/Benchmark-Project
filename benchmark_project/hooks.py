@@ -132,6 +132,14 @@ before_uninstall="benchmark_project.setup.before_uninstall"
 # 	"Event": "frappe.desk.doctype.event.event.has_permission",
 # }
 
+permission_query_conditions = {
+    "Task": "benchmark_project.benchmark_project.permissions.task_permission.get_permission_query_conditions"
+}
+
+has_permission = {
+    "Task": "benchmark_project.benchmark_project.permissions.task_permission.has_permission"
+}
+
 # DocType Class
 # ---------------
 # Override standard doctype classes
