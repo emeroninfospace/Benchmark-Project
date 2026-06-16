@@ -45,7 +45,8 @@ app_license = "mit"
 # include js in doctype views
 doctype_js = {"Quotation" : "public/js/quotation.js",
               "Project": "public/js/project.js",
-              "Material Request": "public/js/material_request.js"
+              "Material Request": "public/js/material_request.js",
+              "Task": "public/js/task.js"
               }
 
 override_doctype_class = {

@@ -14,15 +14,19 @@ def has_permission(doc, ptype='read', user=None):
 	if 'System Manager' in user_roles or 'Projects Manager' in user_roles:
 		return True
  
-	if 'Projects User' in user_roles:
+	if ptype in ('write', 'create', 'delete', 'submit', 'cancel', 'amend'):
+		return True
+ 
+	if 'Projects User' in user_roles or 'Supervisor' in user_roles:
  
 		if doc.owner == user:
 			return True
  
+		assign_raw = frappe.db.get_value('Task', doc.name, '_assign')
 		assigned_to = []
-		if doc.get('_assign'):
+		if assign_raw:
 			try:
-				assigned_to = json.loads(doc._assign) or []
+				assigned_to = json.loads(assign_raw) or []
 			except Exception:
 				assigned_to = []
  
@@ -46,11 +50,10 @@ def get_permission_query_conditions(user=None):
 	if 'System Manager' in user_roles or 'Projects Manager' in user_roles:
 		return ''
  
-	if 'Projects User' in user_roles:
+	if 'Projects User' in user_roles or 'Supervisor' in user_roles:
 		return f"""(
 			`tabTask`.`owner` = '{user}'
 			OR JSON_CONTAINS(`tabTask`.`_assign`, '"{user}"', '$')
 		)"""
  
 	return ''
- 
