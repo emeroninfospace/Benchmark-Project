@@ -175,7 +175,8 @@ doc_events = {
 }
 
 app_include_js = [
-    "/assets/benchmark_project/js/project_calendar.js"
+    "/assets/benchmark_project/js/project_calendar.js",
+    "/assets/benchmark_project/js/workspace_supervisor.js"
 ]
 
 fixtures = [
