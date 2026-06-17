@@ -141,9 +141,9 @@ permission_query_conditions = {
     "Task": "benchmark_project.benchmark_project.permissions.task_permission.get_permission_query_conditions"
 }
 
-has_permission = {
-    "Task": "benchmark_project.benchmark_project.permissions.task_permission.has_permission"
-}
+# has_permission = {
+#     "Task": "benchmark_project.benchmark_project.permissions.task_permission.has_permission"
+# }
 
 # DocType Class
 # ---------------
