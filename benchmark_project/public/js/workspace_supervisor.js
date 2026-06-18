@@ -47,6 +47,28 @@ frappe.after_ajax(() => {
 		});
 	}
 
+	let _observer = null;
+
+	function stop_observer() {
+		if (_observer) {
+			_observer.disconnect();
+			_observer = null;
+		}
+	}
+
+	function start_observer() {
+		stop_observer();
+		const container = document.querySelector('.layout-main') || document.body;
+		_observer = new MutationObserver(() => {
+			if (!is_restricted_supervisor() || !on_projects_workspace()) {
+				stop_observer();
+				return;
+			}
+			apply_restrictions();
+		});
+		_observer.observe(container, { childList: true, subtree: true });
+	}
+
 	function schedule_restrict(initial_delay) {
 		setTimeout(function attempt(retries) {
 			if (!is_restricted_supervisor() || !on_projects_workspace()) return;
@@ -57,12 +79,16 @@ frappe.after_ajax(() => {
 
 			if (has_widgets) {
 				apply_restrictions();
+				start_observer();
 			} else if (retries > 0) {
 				setTimeout(() => attempt(retries - 1), 400);
 			}
 		}, initial_delay, 15);
 	}
 
-	frappe.router.on('change', () => schedule_restrict(300));
+	frappe.router.on('change', () => {
+		stop_observer();
+		schedule_restrict(300);
+	});
 	schedule_restrict(600);
 });
