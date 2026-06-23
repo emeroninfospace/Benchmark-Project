@@ -35,7 +35,7 @@ class ProjectSchedule(Document):
 
             boq = frappe.get_doc("Bill of Quantity", self.bill_of_quantity)
 
-            for boq_item in boq.items:
+            for boq_item in boq.table_kfog:
                 if not boq_item.item_code:
                     continue
 

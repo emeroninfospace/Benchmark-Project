@@ -40,8 +40,7 @@ frappe.ui.form.on("Quotation", {
         if (
             frm.doc.docstatus === 1 &&
             frm.doc.status !== "Closed" &&
-            frm.doc.status !== "Lost" &&
-            frm.doc.status !== "Ordered"
+            frm.doc.status !== "Lost"
         ) {
             frm.add_custom_button(
                 __("Project"),
