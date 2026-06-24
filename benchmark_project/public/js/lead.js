@@ -14,7 +14,7 @@ frappe.ui.form.on("Lead", {
         setTimeout(() => {
             frm.page.remove_inner_button(__("Opportunity"), __("Create"));
             frm.page.remove_inner_button(__("Prospect"), __("Create"));
-            $(frm.page.wrapper).find('button.btn-default.ellipsis[data-toggle="dropdown"]').closest('.btn-group').hide();
+            frm.page.wrapper.find('button:contains("Action")').hide();
         }, 100);
     }
 });
