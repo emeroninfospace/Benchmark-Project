@@ -46,7 +46,8 @@ app_license = "mit"
 doctype_js = {"Quotation" : "public/js/quotation.js",
               "Project": "public/js/project.js",
               "Material Request": "public/js/material_request.js",
-              "Task": "public/js/task.js"
+              "Task": "public/js/task.js",
+              "Lead": "public/js/lead.js"
               }
 
 override_doctype_class = {
