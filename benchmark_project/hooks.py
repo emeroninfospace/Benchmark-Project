@@ -55,7 +55,8 @@ override_doctype_class = {
 }
 
 doctype_list_js = {
-    'Project': 'public/js/project_list.js'
+    'Project': 'public/js/project_list.js',
+    'Lead': 'public/js/lead_list.js'
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
@@ -172,6 +173,12 @@ doc_events = {
     },
     "Task": {
         "on_update": "benchmark_project.events.task.update_parent_task_progress"
+    },
+    "Site Visit": {
+        "on_submit": "benchmark_project.events.lead.on_site_visit_submit"
+    },
+    "Bill of Quantity": {
+        "on_submit": "benchmark_project.events.lead.on_boq_submit"
     },
 }
 

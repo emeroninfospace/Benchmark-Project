@@ -1,5 +1,22 @@
+const LEAD_STATUS_COLORS = {
+    "Lead": "gray",
+    "Open": "green",
+    "Replied": "green",
+    "Opportunity": "blue",
+    "Interested": "blue",
+    "Converted": "purple",
+    "Do Not Contact": "red",
+    "Site Visit Completed": "orange",
+    "Bill of Quantity Completed": "yellow"
+};
+
 frappe.ui.form.on("Lead", {
     refresh(frm) {
+        const color = LEAD_STATUS_COLORS[frm.doc.status];
+        if (color) {
+            frm.page.set_indicator(__(frm.doc.status), color);
+        }
+
         if (!frm.is_new() && frm.doc.__onload && !frm.doc.__onload.is_customer) {
             frm.add_custom_button(__("Site Visit"), () => {
                 frappe.model.with_doctype("Site Visit", function () {

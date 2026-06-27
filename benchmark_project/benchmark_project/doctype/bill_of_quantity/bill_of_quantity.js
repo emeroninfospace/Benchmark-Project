@@ -3,7 +3,7 @@
 
 frappe.ui.form.on('Bill of Quantity', {
     refresh(frm) {
-        if (frm.doc.workflow_state === "Pending") {
+        if (frm.doc.workflow_state === "Pending" || frm.doc.workflow_state === "Approved") {
             quotaion_button(frm);
         }
     }
