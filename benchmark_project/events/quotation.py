@@ -10,13 +10,18 @@ def make_project(source_name, target_doc=None):
     
     def set_missing_values(source, target):
         if source.quotation_to == "Lead":
-            customer_name = frappe.db.get_value("Customer", {"customer_name": source.customer_name}, "name")
+            lead_id = source.party_name
+            customer_name = frappe.db.get_value("Customer", {"lead_name": lead_id}, "name")
             if not customer_name:
+                customer_group = frappe.db.get_default("customer_group")
+                if not customer_group or frappe.db.get_value("Customer Group", customer_group, "is_group"):
+                    customer_group = frappe.db.get_value("Customer Group", {"is_group": 0}, "name") or "Individual"
                 customer = frappe.get_doc({
                     "doctype": "Customer",
                     "customer_name": source.customer_name,
                     "customer_type": "Individual",
-                    "customer_group": frappe.db.get_default("customer_group") or "All Customer Groups",
+                    "lead_name": lead_id,
+                    "customer_group": customer_group,
                     "territory": frappe.db.get_default("territory") or "All Territories",
                 })
                 customer.flags.ignore_permissions = True
