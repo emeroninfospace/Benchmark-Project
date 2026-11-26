@@ -192,7 +192,10 @@ fixtures = [
         "dt": "Custom HTML Block",
         "filters": [
             ["name", "in", [
-                "Task Dashboard"
+                "Task Dashboard",
+                "Accounting Overview",
+                "Sales Overview",
+                "Project Overview"
             ]]
         ]
     }

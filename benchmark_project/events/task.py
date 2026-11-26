@@ -1,5 +1,7 @@
-import frappe
 import json
+
+import frappe
+from frappe.utils import cint, flt
 
 @frappe.whitelist()
 def get_my_tasks(filters=None):
@@ -67,42 +69,41 @@ def get_my_tasks(filters=None):
     """, values, as_dict=True)
 
 
+def update_parent_task_progress(doc, method=None):
+    """Roll child progress up the task tree (Task on_update hook).
 
+    The parent is written with ``db.set_value`` (no hooks fire), so walk up the
+    tree here; otherwise only the first level above the edited task is updated.
+    """
+    parent = doc.parent_task
+    seen = set()
 
-@frappe.whitelist()
-def update_parent_task_progress(doc, method):
-    if not doc.parent_task:
-        return
+    while parent and parent not in seen:
+        seen.add(parent)
 
-    parent_task = doc.parent_task
+        totals = frappe.get_all(
+            "Task",
+            filters={"parent_task": parent, "status": ["!=", "Cancelled"]},
+            fields=["count(name) as n", "sum(progress) as total"],
+        )
+        count = cint(totals[0].n) if totals else 0
+        if not count:
+            return
 
-    child_tasks = frappe.get_all(
-        "Task",
-        filters={
-            "parent_task": parent_task,
-            "status": ["!=", "Cancelled"]
-        },
-        fields=["progress"]
-    )
+        avg_progress = round(flt(totals[0].total) / count, 2)
+        if avg_progress == 0:
+            status = "Open"
+        elif avg_progress >= 100:
+            status = "Completed"
+        else:
+            status = "Working"
 
-    if not child_tasks:
-        return
+        current = frappe.db.get_value("Task", parent, ["progress", "status", "parent_task"], as_dict=True)
+        if not current:
+            return
 
-    total_progress = sum(t.progress or 0 for t in child_tasks)
-    avg_progress = round(total_progress / len(child_tasks), 2)
+        if flt(current.progress) == avg_progress and current.status == status:
+            return  # nothing changed, so nothing above it changes either
 
-    if avg_progress == 0:
-        parent_status = "Open"
-    elif avg_progress >= 100:
-        parent_status = "Completed"
-    else:
-        parent_status = "Working"
-
-    frappe.db.set_value(
-        "Task",
-        parent_task,
-        {
-            "progress": avg_progress,
-            "status": parent_status
-        }
-    )
+        frappe.db.set_value("Task", parent, {"progress": avg_progress, "status": status})
+        parent = current.parent_task

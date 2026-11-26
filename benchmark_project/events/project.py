@@ -1,8 +1,6 @@
 import frappe
 from frappe import _
-from frappe.model.mapper import get_mapped_doc
-from frappe.utils import date_diff,nowdate
-from frappe.utils import flt
+from frappe.utils import flt, nowdate
 
 @frappe.whitelist()
 def create_project_schedule(project):
@@ -31,17 +29,27 @@ def create_material_request(name):
 
     request = frappe.new_doc("Material Request")
     request.custom_project = name
-    request.material_request_type = "Purchase"  
+    request.material_request_type = "Purchase"
+
+    # Quantity already requested for this project, per item, in one query.
+    item_codes = list({item.item_code for item in project.custom_boq_items if item.item_code})
+    requested = dict(
+        frappe.db.sql(
+            """
+            SELECT mri.item_code, SUM(mri.qty)
+            FROM `tabMaterial Request Item` mri
+            WHERE mri.project = %(project)s AND mri.item_code IN %(items)s AND mri.docstatus != 2
+            GROUP BY mri.item_code
+            """,
+            {"project": name, "items": tuple(item_codes)},
+        )
+    ) if item_codes else {}
 
     for item in project.custom_boq_items:
-        used_qty = frappe.db.sql("""
-            SELECT SUM(qty)
-            FROM `tabMaterial Request Item`
-            WHERE project = %s AND item_code = %s AND docstatus != 2
-        """, (name, item.item_code), as_list=True)
-
-        used_qty_val = flt(used_qty[0][0]) if used_qty and used_qty[0][0] else 0
-        available_qty = flt(item.qty) - used_qty_val
+        already = flt(requested.get(item.item_code))
+        available_qty = flt(item.qty) - already
+        # Earlier requests cover BOQ rows of the same item one after another.
+        requested[item.item_code] = max(0.0, already - flt(item.qty))
 
         if available_qty > 0:
             request.append("items", {

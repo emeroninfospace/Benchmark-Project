@@ -39,3 +39,15 @@ This app can use GitHub Actions for CI. The following workflows are configured:
 ### License
 
 mit
+
+### Dashboards
+
+Three workspaces ship with the app, each topped by a live dashboard (a Custom HTML Block):
+
+| Workspace | Block | Data endpoint |
+|---|---|---|
+| Accounting Dashboard | Accounting Overview | `benchmark_project.api.dashboard.get_accounting_dashboard` |
+| Sales Dashboard | Sales Overview | `benchmark_project.api.dashboard.get_sales_dashboard` |
+| Project Dashboard | Project Overview | `benchmark_project.api.dashboard.get_project_dashboard` |
+
+Charts and styling live in `public/js/benchmark_dashboards.js`, loaded on demand by the dashboard blocks (not on every desk page). Responses are cached per user for 2 minutes; the refresh button fetches fresh data. All queries go through `frappe.get_list`, so role and user permissions apply; a card the user can't read shows a "no access" state. After pulling, run `bench migrate` (syncs the workspaces and HTML-block fixtures) and `bench build --app benchmark_project`.
