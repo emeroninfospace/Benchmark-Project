@@ -11,7 +11,7 @@ erpnext.sales_common.setup_selling_controller();
 frappe.ui.form.on("Proforma Invoice", {
 	custom_item_load: function(frm) {
 		frappe.call({
-			method: 'power_tech.power_tech.doctype.proforma_invoice.proforma_invoice.load_target_items',
+			method: 'benchmark_project.benchmark_project.doctype.proforma_invoice.proforma_invoice.load_target_items',
 			args: {
 				docname: frm.doc.name
 			},

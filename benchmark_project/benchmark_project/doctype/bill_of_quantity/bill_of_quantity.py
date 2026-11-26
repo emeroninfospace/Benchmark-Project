@@ -56,18 +56,11 @@ class BillofQuantity(Document):
 def make_quotation(source_name, target_doc=None):
 
     def set_missing_values(source, target):
-        source_data = frappe.get_value(
-            "Bill of Quantity", 
-            source.name, 
-            [
-                "party_name", "party_type", "project_name", "posting_date","total_amount_boq","scope_of_work"
-            ],
-            as_dict=1
-        )
-        setting = frappe.db.get_value("Benchmark Settings", None, "default_service_item")
+        source_data = source
+        setting = frappe.db.get_single_value("Benchmark Settings", "default_service_item")
         if not setting:
             frappe.throw("Please set Default Service Item in Benchmark Settings")
-        item = frappe.get_doc("Item", setting)
+        item = frappe.get_cached_value("Item", setting, ["item_code", "item_name", "stock_uom"], as_dict=True)
 
         target_fields = {
             "quotation_to":source_data.party_type,
@@ -111,15 +104,17 @@ def make_quotation(source_name, target_doc=None):
 
 @frappe.whitelist()
 def get_items(item_group):
-    items = []
-    item_codes = frappe.get_all("Item", filters={"item_group": item_group, "disabled":0}, pluck="name")
-    for item_code in item_codes:
-        item = frappe.get_doc("Item", item_code)
-        clean_description = strip_html(item.description) 
-        items.append({
+    items = frappe.get_all(
+        "Item",
+        filters={"item_group": item_group, "disabled": 0},
+        fields=["item_code", "description", "stock_uom", "standard_rate"],
+    )
+    return [
+        {
             "item_code": item.item_code,
-            "description": clean_description,
+            "description": strip_html(item.description or ""),
             "uom": item.stock_uom,
-            "rate": item.standard_rate
-        })
-    return items
+            "rate": item.standard_rate,
+        }
+        for item in items
+    ]

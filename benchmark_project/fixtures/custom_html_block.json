@@ -14,33 +14,33 @@
   "docstatus": 0,
   "doctype": "Custom HTML Block",
   "html": "<div class=\"bm-dashboard-root\"></div>",
-  "modified": "2026-11-26 10:00:00.000000",
+  "modified": "2026-11-26 14:00:00.000000",
   "name": "Accounting Overview",
   "private": 0,
   "roles": [],
-  "script": "(function boot(tries) {\n\tif (window.benchmark_dashboards) {\n\t\twindow.benchmark_dashboards.mount(root_element, \"accounting\");\n\t} else if (tries < 100) {\n\t\tsetTimeout(function () { boot(tries + 1); }, 100);\n\t}\n})(0);\n",
+  "script": "// The dashboard library is loaded on demand, only on pages that show it.\n(function () {\n\tvar src = \"/assets/benchmark_project/js/benchmark_dashboards.js\";\n\tfunction mount() {\n\t\twindow.benchmark_dashboards.mount(root_element, \"accounting\");\n\t}\n\tif (window.benchmark_dashboards) {\n\t\tmount();\n\t} else {\n\t\tfrappe.require(src, mount);\n\t}\n})();\n",
   "style": ":host { display: block; }\n.bm-dashboard-root { padding: 4px 0 8px; }"
  },
  {
   "docstatus": 0,
   "doctype": "Custom HTML Block",
   "html": "<div class=\"bm-dashboard-root\"></div>",
-  "modified": "2026-11-26 10:00:00.000000",
+  "modified": "2026-11-26 14:00:00.000000",
   "name": "Sales Overview",
   "private": 0,
   "roles": [],
-  "script": "(function boot(tries) {\n\tif (window.benchmark_dashboards) {\n\t\twindow.benchmark_dashboards.mount(root_element, \"sales\");\n\t} else if (tries < 100) {\n\t\tsetTimeout(function () { boot(tries + 1); }, 100);\n\t}\n})(0);\n",
+  "script": "// The dashboard library is loaded on demand, only on pages that show it.\n(function () {\n\tvar src = \"/assets/benchmark_project/js/benchmark_dashboards.js\";\n\tfunction mount() {\n\t\twindow.benchmark_dashboards.mount(root_element, \"sales\");\n\t}\n\tif (window.benchmark_dashboards) {\n\t\tmount();\n\t} else {\n\t\tfrappe.require(src, mount);\n\t}\n})();\n",
   "style": ":host { display: block; }\n.bm-dashboard-root { padding: 4px 0 8px; }"
  },
  {
   "docstatus": 0,
   "doctype": "Custom HTML Block",
   "html": "<div class=\"bm-dashboard-root\"></div>",
-  "modified": "2026-11-26 10:00:00.000000",
+  "modified": "2026-11-26 14:00:00.000000",
   "name": "Project Overview",
   "private": 0,
   "roles": [],
-  "script": "(function boot(tries) {\n\tif (window.benchmark_dashboards) {\n\t\twindow.benchmark_dashboards.mount(root_element, \"projects\");\n\t} else if (tries < 100) {\n\t\tsetTimeout(function () { boot(tries + 1); }, 100);\n\t}\n})(0);\n",
+  "script": "// The dashboard library is loaded on demand, only on pages that show it.\n(function () {\n\tvar src = \"/assets/benchmark_project/js/benchmark_dashboards.js\";\n\tfunction mount() {\n\t\twindow.benchmark_dashboards.mount(root_element, \"projects\");\n\t}\n\tif (window.benchmark_dashboards) {\n\t\tmount();\n\t} else {\n\t\tfrappe.require(src, mount);\n\t}\n})();\n",
   "style": ":host { display: block; }\n.bm-dashboard-root { padding: 4px 0 8px; }"
  }
 ]

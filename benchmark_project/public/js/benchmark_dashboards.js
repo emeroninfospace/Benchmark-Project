@@ -812,7 +812,7 @@
 					this.load();
 				})
 			);
-			this.el.querySelector("[data-refresh]").addEventListener("click", () => this.load());
+			this.el.querySelector("[data-refresh]").addEventListener("click", () => this.load(true));
 			this.el.querySelector("[data-company]").addEventListener("change", (e) => {
 				this.company = e.target.value;
 				store.set("company", this.company);
@@ -888,17 +888,25 @@
 			return Promise.reject(new Error("frappe.xcall unavailable"));
 		}
 
-		async load() {
+		async load(refresh) {
 			const [from, to] = periodRange(this.period);
 			this.el.classList.add("is-loading");
 			const token = (this.token = {});
 			try {
-				const data = await this.call(this.def.method, { company: this.company, from_date: iso(from), to_date: iso(to) });
+				const data = await this.call(this.def.method, {
+					company: this.company,
+					from_date: iso(from),
+					to_date: iso(to),
+					refresh: refresh ? 1 : 0,
+				});
 				if (token !== this.token) return;
 				this.data = data;
 				this.cur = (data.filters && data.filters.currency) || "";
 				const f = data.filters || {};
-				this.el.querySelector("[data-sub]").textContent = `${f.company || ""} · ${fmtDate(f.from_date, true)} – ${fmtDate(f.to_date, true)}`;
+				const at = data.generated_at ? String(data.generated_at).slice(11, 16) : "";
+				this.el.querySelector("[data-sub]").textContent =
+					`${f.company || ""} · ${fmtDate(f.from_date, true)} – ${fmtDate(f.to_date, true)}` +
+					(at ? ` · ${t("updated")} ${at}` : "");
 				this.el.querySelector("[data-error]").innerHTML = "";
 				this.render();
 			} catch (e) {

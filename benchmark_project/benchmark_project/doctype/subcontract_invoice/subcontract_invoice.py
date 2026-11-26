@@ -22,16 +22,15 @@ class SubcontractInvoice(Document):
 
     def make_gl_entries(self):
 
-        company = frappe.get_doc("Company", self.company)
-
-        payable_account = company.default_payable_account
-        expense_account = company.custom_subcontract_account
+        payable_account, expense_account = frappe.get_cached_value(
+            "Company", self.company, ["default_payable_account", "custom_subcontract_account"]
+        )
 
         if not payable_account or not expense_account:
             frappe.throw("Set Default Payable Account and Subcontract Account in Company")
 
         if not self.cost_center:
-            self.cost_center = frappe.db.get_value("Company", self.company, "cost_center")
+            self.cost_center = frappe.get_cached_value("Company", self.company, "cost_center")
 
         posting_date = getdate(self.transaction_date)
 
@@ -115,24 +114,27 @@ class SubcontractInvoice(Document):
 @frappe.whitelist()
 def make_payment_entry(invoice, mode_of_payment, amount):
     invoice_doc = frappe.get_doc("Subcontract Invoice", invoice)
+    invoice_doc.check_permission("read")
+    frappe.has_permission("Journal Entry", "create", throw=True)
+
+    if invoice_doc.docstatus != 1:
+        frappe.throw("Payments can only be made against a submitted Subcontract Invoice")
 
     company = invoice_doc.company
     project = invoice_doc.project
 
-    mop = frappe.get_doc("Mode of Payment", mode_of_payment)
-
-    default_account = None
-    for acc in mop.accounts:
-        if acc.company == company:
-            default_account = acc.default_account
-            break
+    default_account = frappe.db.get_value(
+        "Mode of Payment Account", {"parent": mode_of_payment, "company": company}, "default_account"
+    )
 
     if not default_account:
         frappe.throw("No default account found for Mode of Payment")
 
-    payable_account = frappe.get_value("Company", company, "default_payable_account")
+    payable_account = frappe.get_cached_value("Company", company, "default_payable_account")
 
     amount = frappe.utils.flt(amount, 2)
+    if amount <= 0:
+        frappe.throw("Payment amount must be greater than zero")
 
     paid_amount = frappe.utils.flt(invoice_doc.paid_amount or 0)
     grand_total = frappe.utils.flt(invoice_doc.grand_total)

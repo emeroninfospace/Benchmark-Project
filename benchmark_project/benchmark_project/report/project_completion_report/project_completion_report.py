@@ -57,39 +57,57 @@ def get_data(filters=None):
 
     data = []
     today = nowdate()
+    if not projects:
+        return data
 
-    for project in projects:
-        ts_conditions = ["tsd.project = %s", "ts.docstatus = 1"]
-        ts_values = [project.name]
+    names = tuple(p.name for p in projects)
 
-        if filters.get("from_date"):
-            ts_conditions.append("ts.start_date >= %s")
-            ts_values.append(filters.get("from_date"))
+    # Timesheet totals for every project in one grouped query.
+    ts_conditions = ["tsd.project IN %(projects)s", "ts.docstatus = 1"]
+    ts_values = {"projects": names}
+    if filters.get("from_date"):
+        ts_conditions.append("ts.start_date >= %(from_date)s")
+        ts_values["from_date"] = filters.get("from_date")
+    if filters.get("to_date"):
+        ts_conditions.append("ts.end_date <= %(to_date)s")
+        ts_values["to_date"] = filters.get("to_date")
 
-        if filters.get("to_date"):
-            ts_conditions.append("ts.end_date <= %s")
-            ts_values.append(filters.get("to_date"))
-
-        ts_where = " AND ".join(ts_conditions)
-
-        timesheet_data = frappe.db.sql(f"""
+    timesheets = {
+        row.project: row
+        for row in frappe.db.sql(f"""
             SELECT
+                tsd.project,
                 COALESCE(SUM(tsd.hours), 0) AS total_hours,
                 COALESCE(SUM(tsd.billing_amount), 0) AS total_billable,
                 COALESCE(SUM(tsd.costing_amount), 0) AS total_costing
             FROM `tabTimesheet Detail` tsd
             INNER JOIN `tabTimesheet` ts ON ts.name = tsd.parent
-            WHERE {ts_where}
-        """, ts_values, as_dict=True)[0]
+            WHERE {" AND ".join(ts_conditions)}
+            GROUP BY tsd.project
+        """, ts_values, as_dict=True)
+    }
 
-        task_data = frappe.db.sql("""
+    # Task counts for every project in one grouped query.
+    tasks = {
+        row.project: row
+        for row in frappe.db.sql("""
             SELECT
-                COALESCE(COUNT(*), 0) AS total_tasks,
+                project,
+                COUNT(*) AS total_tasks,
                 COALESCE(SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END), 0) AS completed_tasks,
-                COALESCE(SUM(CASE WHEN exp_end_date < %s AND status != 'Completed' THEN 1 ELSE 0 END), 0) AS overdue_tasks
+                COALESCE(SUM(CASE WHEN exp_end_date < %(today)s AND status != 'Completed' THEN 1 ELSE 0 END), 0) AS overdue_tasks
             FROM `tabTask`
-            WHERE project = %s
-        """, (today, project.name), as_dict=True)[0]
+            WHERE project IN %(projects)s
+            GROUP BY project
+        """, {"today": today, "projects": names}, as_dict=True)
+    }
+
+    empty_ts = frappe._dict(total_hours=0, total_billable=0, total_costing=0)
+    empty_tasks = frappe._dict(total_tasks=0, completed_tasks=0, overdue_tasks=0)
+
+    for project in projects:
+        timesheet_data = timesheets.get(project.name, empty_ts)
+        task_data = tasks.get(project.name, empty_tasks)
         total_tasks = task_data.total_tasks
         completed_tasks = task_data.completed_tasks
 

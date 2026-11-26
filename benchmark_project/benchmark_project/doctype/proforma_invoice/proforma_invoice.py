@@ -10,6 +10,7 @@ from frappe.utils import flt, getdate, nowdate
 from collections import defaultdict
 
 from erpnext.controllers.selling_controller import SellingController
+from erpnext.controllers.taxes_and_totals import calculate_taxes_and_totals as _CalculateTaxesAndTotals
 
 form_grid_templates = {"items": "templates/form_grid/item_grid.html"}
 
@@ -151,83 +152,15 @@ class ProformaInvoice(SellingController):
 		make_packing_list(self)
 
 	def calculate_taxes_and_totals(self):
+		"""Use a Proforma-specific calculator.
+
+		ERPNext's calculator only treats known selling doctypes as "selling" and
+		otherwise reads purchase-only fields (``tax.category``). The previous
+		version patched ERPNext's shared class at runtime, which silently changed
+		totals for every other doctype in the same worker. The subclass keeps the
+		fix local to Proforma Invoice.
 		"""
-		Override to ensure Proforma Invoice is treated like Quotation for tax calculations.
-		This prevents the AttributeError when tax.category doesn't exist.
-		"""
-		from erpnext.controllers.taxes_and_totals import calculate_taxes_and_totals as calc_taxes
-		from erpnext.controllers import taxes_and_totals
-		
-		# Store original calculate_totals if not already patched
-		if not hasattr(taxes_and_totals.calculate_taxes_and_totals, '_proforma_patched'):
-			original_calculate_totals = taxes_and_totals.calculate_taxes_and_totals.calculate_totals
-			
-			def patched_calculate_totals(self):
-				"""Patched version that includes Proforma Invoice in selling doctypes"""
-				from frappe.utils import flt
-				
-				grand_total_diff = getattr(self, "grand_total_diff", 0)
-
-				if self.doc.get("taxes"):
-					self.doc.grand_total = flt(self.doc.get("taxes")[-1].total) + grand_total_diff
-				else:
-					self.doc.grand_total = flt(self.doc.net_total)
-
-				if self.doc.get("taxes"):
-					self.doc.total_taxes_and_charges = flt(
-						self.doc.grand_total - self.doc.net_total - grand_total_diff,
-						self.doc.precision("total_taxes_and_charges"),
-					)
-				else:
-					self.doc.total_taxes_and_charges = 0.0
-
-				self._set_in_company_currency(self.doc, ["total_taxes_and_charges"])
-
-				# Add Proforma Invoice to the list of selling doctypes
-				if self.doc.doctype in [
-					"Quotation",
-					"Sales Order",
-					"Delivery Note",
-					"Sales Invoice",
-					"POS Invoice",
-					"Proforma Invoice",  # Added here
-				]:
-					self.doc.base_grand_total = (
-						flt(self.doc.grand_total * self.doc.conversion_rate, self.doc.precision("base_grand_total"))
-						if self.doc.total_taxes_and_charges
-						else self.doc.base_net_total
-					)
-				else:
-					self.doc.taxes_and_charges_added = self.doc.taxes_and_charges_deducted = 0.0
-					for tax in self.doc.get("taxes"):
-						# Safely check for category attribute
-						tax_category = getattr(tax, "category", None)
-						if tax_category and tax_category in ["Valuation and Total", "Total"]:
-							if tax.add_deduct_tax == "Add":
-								self.doc.taxes_and_charges_added += flt(tax.tax_amount_after_discount_amount)
-							else:
-								self.doc.taxes_and_charges_deducted += flt(tax.tax_amount_after_discount_amount)
-
-					self.doc.round_floats_in(self.doc, ["taxes_and_charges_added", "taxes_and_charges_deducted"])
-
-					self.doc.base_grand_total = (
-						flt(self.doc.grand_total * self.doc.conversion_rate)
-						if (self.doc.taxes_and_charges_added or self.doc.taxes_and_charges_deducted)
-						else self.doc.base_net_total
-					)
-
-					self._set_in_company_currency(self.doc, ["taxes_and_charges_added", "taxes_and_charges_deducted"])
-
-				self.doc.round_floats_in(self.doc, ["grand_total", "base_grand_total"])
-
-				self.set_rounded_total()
-			
-			# Apply the patch
-			taxes_and_totals.calculate_taxes_and_totals.calculate_totals = patched_calculate_totals
-			taxes_and_totals.calculate_taxes_and_totals._proforma_patched = True
-		
-		# Now call the standard calculation
-		calc_taxes(self)
+		ProformaTaxesAndTotals(self)
 
 	def before_submit(self):
 		self.set_has_alternative_item()
@@ -450,6 +383,68 @@ class ProformaInvoice(SellingController):
 
 
 
+
+
+class ProformaTaxesAndTotals(_CalculateTaxesAndTotals):
+	def calculate_totals(self):
+		"""ERPNext's calculate_totals, with Proforma Invoice treated as a selling doctype."""
+		
+		grand_total_diff = getattr(self, "grand_total_diff", 0)
+
+		if self.doc.get("taxes"):
+			self.doc.grand_total = flt(self.doc.get("taxes")[-1].total) + grand_total_diff
+		else:
+			self.doc.grand_total = flt(self.doc.net_total)
+
+		if self.doc.get("taxes"):
+			self.doc.total_taxes_and_charges = flt(
+				self.doc.grand_total - self.doc.net_total - grand_total_diff,
+				self.doc.precision("total_taxes_and_charges"),
+			)
+		else:
+			self.doc.total_taxes_and_charges = 0.0
+
+		self._set_in_company_currency(self.doc, ["total_taxes_and_charges"])
+
+		# Add Proforma Invoice to the list of selling doctypes
+		if self.doc.doctype in [
+			"Quotation",
+			"Sales Order",
+			"Delivery Note",
+			"Sales Invoice",
+			"POS Invoice",
+			"Proforma Invoice",  # Added here
+		]:
+			self.doc.base_grand_total = (
+				flt(self.doc.grand_total * self.doc.conversion_rate, self.doc.precision("base_grand_total"))
+				if self.doc.total_taxes_and_charges
+				else self.doc.base_net_total
+			)
+		else:
+			self.doc.taxes_and_charges_added = self.doc.taxes_and_charges_deducted = 0.0
+			for tax in self.doc.get("taxes"):
+				# Safely check for category attribute
+				tax_category = getattr(tax, "category", None)
+				if tax_category and tax_category in ["Valuation and Total", "Total"]:
+					if tax.add_deduct_tax == "Add":
+						self.doc.taxes_and_charges_added += flt(tax.tax_amount_after_discount_amount)
+					else:
+						self.doc.taxes_and_charges_deducted += flt(tax.tax_amount_after_discount_amount)
+
+			self.doc.round_floats_in(self.doc, ["taxes_and_charges_added", "taxes_and_charges_deducted"])
+
+			self.doc.base_grand_total = (
+				flt(self.doc.grand_total * self.doc.conversion_rate)
+				if (self.doc.taxes_and_charges_added or self.doc.taxes_and_charges_deducted)
+				else self.doc.base_net_total
+			)
+
+			self._set_in_company_currency(self.doc, ["taxes_and_charges_added", "taxes_and_charges_deducted"])
+
+		self.doc.round_floats_in(self.doc, ["grand_total", "base_grand_total"])
+
+		self.set_rounded_total()
+
 @frappe.whitelist()
 def load_target_items(docname):
     """
@@ -536,8 +531,6 @@ def load_target_items(docname):
 @frappe.whitelist()
 def make_proforma_invoice(quotation):
 
-    quotation_doc = frappe.get_doc("Quotation", quotation)
-
     billed_qty_map = defaultdict(float)
 
     billed_items = frappe.db.sql("""
@@ -580,14 +573,7 @@ def make_proforma_invoice(quotation):
     remaining_items = []
 
     for item in pi.items:
-        quotation_item_qty = frappe.db.get_value(
-			"Quotation Item",
-			{
-				"parent": quotation,
-				"item_code": item.item_code
-			},
-			"qty"
-		) or 0
+        quotation_item_qty = flt(item.qty)  # mapped from the quotation row
 
         billed_qty = billed_qty_map.get(item.item_code, 0)
         remaining_qty = quotation_item_qty - billed_qty

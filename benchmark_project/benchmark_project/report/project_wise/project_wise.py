@@ -1,8 +1,10 @@
 # Copyright (c) 2026, Emeron Infospace and contributors
 # For license information, please see license.txt
 
-import frappe
+from collections import defaultdict
 from datetime import datetime
+
+import frappe
 
 
 def execute(filters=None):
@@ -39,17 +41,58 @@ def execute(filters=None):
         order_by="name"
     )
 
-    user_map = {
-        u.name: u.full_name
-        for u in frappe.get_all("User", fields=["name", "full_name"])
-    }
+    project_names = [p.name for p in projects]
+    task_fields = ["name", "subject", "status", "priority", "progress", "exp_start_date", "exp_end_date"]
+
+    # All top-level tasks for the listed projects, in one query.
+    parent_filters = {"project": ["in", project_names], "parent_task": ["is", "not set"]}
+    if filters.get("task"):
+        parent_filters["name"] = filters["task"]
+    parent_rows = frappe.get_all(
+        "Task", filters=parent_filters, fields=[*task_fields, "project"], order_by="name"
+    ) if project_names else []
+
+    # All their direct children, in one query.
+    parent_names = [t.name for t in parent_rows]
+    child_rows = frappe.get_all(
+        "Task", filters={"parent_task": ["in", parent_names]}, fields=[*task_fields, "parent_task"], order_by="name"
+    ) if parent_names else []
+
+    parents_by_project = defaultdict(list)
+    for t in parent_rows:
+        parents_by_project[t.project].append(t)
+    children_by_parent = defaultdict(list)
+    for t in child_rows:
+        children_by_parent[t.parent_task].append(t)
+
+    # Open assignments for every task shown, in one query; names only for users involved.
+    assignees = defaultdict(list)
+    task_names = parent_names + [t.name for t in child_rows]
+    if task_names:
+        for todo in frappe.get_all(
+            "ToDo",
+            filters={"reference_type": "Task", "reference_name": ["in", task_names], "status": "Open"},
+            fields=["reference_name", "allocated_to"],
+        ):
+            assignees[todo.reference_name].append(todo.allocated_to)
+    involved = {u for users in assignees.values() for u in users}
+    user_map = dict(
+        frappe.get_all("User", filters={"name": ["in", list(involved)]}, fields=["name", "full_name"], as_list=True)
+    ) if involved else {}
+
+    def assigned(task_name):
+        users = assignees.get(task_name, [])
+        return {
+            "names": ", ".join(user_map.get(u) or u for u in users),
+            "ids": ", ".join(users),
+        }
 
     for project in projects:
         project_duration = calculate_duration(
-            project.expected_start_date, 
+            project.expected_start_date,
             project.expected_end_date
         )
-        
+
         data.append({
             "name": project.name,
             "project_task": project.project_name,
@@ -57,37 +100,12 @@ def execute(filters=None):
             "indent": 0,
             "expected_start_date": project.expected_start_date,
             "expected_end_date": project.expected_end_date,
-            "duration": project_duration, 
+            "duration": project_duration,
             "progress": project.percent_complete,
         })
 
-        parent_task_filters = {
-            "project": project.name,
-            "parent_task": ["is", "not set"]
-        }
-
-        if filters.get("task"):
-            parent_task_filters["name"] = filters["task"]
-
-        parent_tasks = frappe.get_all(
-            "Task",
-            filters=parent_task_filters,
-            fields=[
-                "name",
-                "subject",
-                "status",
-                "priority",
-                "progress",
-                "exp_start_date",  
-                "exp_end_date"     
-            ],
-            order_by="name"
-        )
-
-        for ptask in parent_tasks:
-            assigned_users = get_assigned_users(ptask.name, user_map)
-            
-            task_duration = calculate_duration(ptask.exp_start_date, ptask.exp_end_date)
+        for ptask in parents_by_project.get(project.name, []):
+            assigned_users = assigned(ptask.name)
 
             data.append({
                 "name": ptask.name,
@@ -98,31 +116,14 @@ def execute(filters=None):
                 "priority": ptask.priority,
                 "expected_start_date": ptask.exp_start_date or project.expected_start_date,
                 "expected_end_date": ptask.exp_end_date or project.expected_end_date,
-                "duration": task_duration,  
+                "duration": calculate_duration(ptask.exp_start_date, ptask.exp_end_date),
                 "progress": ptask.progress,
                 "assigned_to": assigned_users["names"],
                 "assigned_to_ids": assigned_users["ids"]
             })
 
-            child_tasks = frappe.get_all(
-                "Task",
-                filters={"parent_task": ptask.name},
-                fields=[
-                    "name",
-                    "subject",
-                    "status",
-                    "priority",
-                    "progress",
-                    "exp_start_date",  
-                    "exp_end_date"     
-                ],
-                order_by="name"
-            )
-
-            for ctask in child_tasks:
-                assigned_users = get_assigned_users(ctask.name, user_map)
-                
-                child_task_duration = calculate_duration(ctask.exp_start_date, ctask.exp_end_date)
+            for ctask in children_by_parent.get(ptask.name, []):
+                assigned_users = assigned(ctask.name)
 
                 data.append({
                     "name": ctask.name,
@@ -133,7 +134,7 @@ def execute(filters=None):
                     "priority": ctask.priority,
                     "expected_start_date": ctask.exp_start_date or project.expected_start_date,
                     "expected_end_date": ctask.exp_end_date or project.expected_end_date,
-                    "duration": child_task_duration,  
+                    "duration": calculate_duration(ctask.exp_start_date, ctask.exp_end_date),
                     "progress": ctask.progress,
                     "assigned_to": assigned_users["names"],
                     "assigned_to_ids": assigned_users["ids"]
@@ -193,30 +194,6 @@ def get_columns():
             "width": 120
         }
     ]
-
-
-def get_assigned_users(task_name, user_map):
-    users = frappe.get_all(
-        "ToDo",
-        filters={
-            "reference_type": "Task",
-            "reference_name": task_name,
-            "status": "Open"
-        },
-        pluck="allocated_to"
-    )
-
-    full_names = []
-    user_ids = []
-
-    for u in users:
-        full_names.append(user_map.get(u, u))
-        user_ids.append(u)
-
-    return {
-        "names": ", ".join(full_names),
-        "ids": ", ".join(user_ids)
-    }
 
 
 def calculate_duration(start_date, end_date):
