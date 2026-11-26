@@ -184,7 +184,8 @@ doc_events = {
 
 app_include_js = [
     "/assets/benchmark_project/js/project_calendar.js",
-    "/assets/benchmark_project/js/workspace_supervisor.js"
+    "/assets/benchmark_project/js/workspace_supervisor.js",
+    "/assets/benchmark_project/js/benchmark_dashboards.js"
 ]
 
 fixtures = [
@@ -192,7 +193,10 @@ fixtures = [
         "dt": "Custom HTML Block",
         "filters": [
             ["name", "in", [
-                "Task Dashboard"
+                "Task Dashboard",
+                "Accounting Overview",
+                "Sales Overview",
+                "Project Overview"
             ]]
         ]
     }
