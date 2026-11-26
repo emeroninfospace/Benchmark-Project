@@ -86,6 +86,24 @@ def _totals(doctype, aggregates, filters, group_field="company"):
 	return frappe._dict({alias: sum(flt(r.get(alias)) for r in rows) for alias in aggregates})
 
 
+def _coverage(doctype, date_field, filters, label):
+	"""How much data exists at all (count, first and last date), to explain an empty period."""
+	rows = _agg(
+		doctype,
+		"company",
+		{"n": "count(name)", "first": f"min({date_field})", "last": f"max({date_field})"},
+		filters,
+	)
+	firsts = [r.first for r in rows if r.first]
+	lasts = [r.last for r in rows if r.last]
+	return {
+		"label": label,
+		"count": sum(cint(r.n) for r in rows),
+		"first": getdate(min(firsts)) if firsts else None,
+		"last": getdate(max(lasts)) if lasts else None,
+	}
+
+
 MIN_TREND_DAYS = 14
 
 
@@ -276,14 +294,23 @@ def _acc_accounts(c):
 	def load():
 		rows = frappe.get_list(
 			"Account",
-			filters={"company": c.f.company, "is_group": 0},
-			fields=["name", "account_name", "root_type", "account_type"],
+			filters={"company": c.f.company},
+			fields=["name", "account_name", "root_type", "account_type", "is_group", "lft", "rgt"],
 			limit_page_length=0,
 		)
+		leaves = [r for r in rows if not r.is_group]
+		# Bank accounts are often created under the "Bank Accounts" / "Cash In Hand"
+		# groups without their own account type, so a leaf counts as cash when it
+		# or any group above it is typed Cash or Bank.
+		cash_groups = [(r.lft, r.rgt) for r in rows if r.is_group and r.account_type in ("Cash", "Bank")]
 		return frappe._dict(
-			income={r.name: r.account_name for r in rows if r.root_type == "Income"},
-			expense={r.name: r.account_name for r in rows if r.root_type == "Expense"},
-			cash=[r.name for r in rows if r.account_type in ("Cash", "Bank")],
+			income={r.name: r.account_name for r in leaves if r.root_type == "Income"},
+			expense={r.name: r.account_name for r in leaves if r.root_type == "Expense"},
+			cash=[
+				r.name
+				for r in leaves
+				if r.account_type in ("Cash", "Bank") or any(lo < cint(r.lft) < hi for lo, hi in cash_groups)
+			],
 		)
 
 	return c.once("accounts", load)
@@ -517,7 +544,17 @@ def _acc_expense_entries(c):
 	}
 
 
+def _acc_coverage(c):
+	return _coverage(
+		"GL Entry",
+		"posting_date",
+		[["company", "=", c.f.company], ["is_cancelled", "=", 0]],
+		_("ledger entries"),
+	)
+
+
 ACCOUNTING_SECTIONS = {
+	"coverage": _acc_coverage,
 	"kpis": _acc_kpis,
 	"trend": _acc_trend,
 	"expense_breakdown": _acc_expense_breakdown,
@@ -742,7 +779,17 @@ def _sales_upcoming_visits(c):
 	return {"rows": rows}
 
 
+def _sales_coverage(c):
+	return _coverage(
+		"Sales Invoice",
+		"posting_date",
+		[["company", "=", c.f.company], ["docstatus", "=", 1]],
+		_("submitted sales invoices"),
+	)
+
+
 SALES_SECTIONS = {
+	"coverage": _sales_coverage,
 	"kpis": _sales_kpis,
 	"trend": _sales_trend,
 	"funnel": _sales_funnel,
@@ -982,7 +1029,12 @@ def _proj_subcontract(c):
 	return {"ordered": orders.amt, "orders": cint(orders.n), "invoiced": invoices.amt, "paid": invoices.paid}
 
 
+def _proj_coverage(c):
+	return _coverage("Project", "creation", [["company", "=", c.f.company]], _("projects"))
+
+
 PROJECT_SECTIONS = {
+	"coverage": _proj_coverage,
 	"kpis": _proj_kpis,
 	"status": _proj_status,
 	"projects": _proj_list,
