@@ -25,7 +25,6 @@ from frappe.utils import (
 	date_diff,
 	flt,
 	get_first_day,
-	get_last_day,
 	getdate,
 	now_datetime,
 	today,
@@ -87,36 +86,83 @@ def _totals(doctype, aggregates, filters, group_field="company"):
 	return frappe._dict({alias: sum(flt(r.get(alias)) for r in rows) for alias in aggregates})
 
 
-def _month_buckets(end_date, months=12):
-	"""OrderedDict of 'YYYY-MM' -> 0 for the ``months`` months ending at ``end_date``."""
-	end = get_first_day(end_date)
-	buckets = OrderedDict()
-	for i in range(months - 1, -1, -1):
-		buckets[getdate(add_months(end, -i)).strftime("%Y-%m")] = 0.0
-	return buckets
+MIN_TREND_DAYS = 14
 
 
-def _monthly(doctype, date_field, aggregates, filters, end_date, value):
-	"""Per-month totals for the 12 months ending at ``end_date``.
+def _trend_frame(f):
+	"""Time window and bucket size for trend charts, following the selected period.
 
-	Rows are grouped by day in SQL and folded into months here; ``value(row)``
+	The window is the selected range (stretched back to at least two weeks so a
+	"Today" view still draws a line). Buckets are days up to ~6 weeks, weeks up
+	to ~6 months, months beyond. ``shift`` is the window length in days, used to
+	line up the previous period bucket-for-bucket.
+	"""
+	end = getdate(f.to_date)
+	start = getdate(f.from_date)
+	if date_diff(end, start) + 1 < MIN_TREND_DAYS:
+		start = getdate(add_days(end, -(MIN_TREND_DAYS - 1)))
+	days = date_diff(end, start) + 1
+	gran = "day" if days <= 45 else "week" if days <= 190 else "month"
+
+	keys = []
+	k = _bucket_key(start, gran)
+	while k <= end:
+		keys.append(k)
+		k = _next_bucket(k, gran)
+	buckets = [
+		{"key": k, "start": max(k, start), "end": min(getdate(add_days(_next_bucket(k, gran), -1)), end)}
+		for k in keys
+	]
+	return frappe._dict(start=start, end=end, granularity=gran, bucket_keys=keys, buckets=buckets, shift=days)
+
+
+def _bucket_key(d, gran):
+	d = getdate(d)
+	if gran == "day":
+		return d
+	if gran == "week":
+		return getdate(add_days(d, -d.weekday()))  # Monday
+	return getdate(get_first_day(d))
+
+
+def _next_bucket(k, gran):
+	if gran == "day":
+		return getdate(add_days(k, 1))
+	if gran == "week":
+		return getdate(add_days(k, 7))
+	return getdate(add_months(k, 1))
+
+
+def _series(frame, doctype, date_field, aggregates, filters, value, previous=False):
+	"""Bucketed totals over the trend window (or the window just before it).
+
+	Rows are grouped by day in SQL and folded into buckets here; ``value(row)``
 	turns one row's aggregates into the number to add.
 	"""
-	buckets = _month_buckets(end_date)
-	start = getdate(get_first_day(add_months(end_date, -11)))
+	shift = frame.shift if previous else 0
+	start = getdate(add_days(frame.start, -shift))
+	end = getdate(add_days(frame.end, -shift))
+	totals = OrderedDict((k, 0.0) for k in frame.bucket_keys)
 	rows = _agg(
-		doctype,
-		date_field,
-		aggregates,
-		[*filters, [date_field, "between", [start, getdate(get_last_day(end_date))]]],
-		order_by="grp asc",
+		doctype, date_field, aggregates, [*filters, [date_field, "between", [start, end]]], order_by="grp asc"
 	)
 	for r in rows:
 		if r.grp:
-			key = getdate(r.grp).strftime("%Y-%m")
-			if key in buckets:
-				buckets[key] += value(r)
-	return buckets
+			key = _bucket_key(add_days(r.grp, shift), frame.granularity)
+			if key in totals:
+				totals[key] += value(r)
+	return list(totals.values())
+
+
+def _trend_payload(frame, series, prev=None):
+	return {
+		"granularity": frame.granularity,
+		"from": frame.start,
+		"to": frame.end,
+		"buckets": frame.buckets,
+		"series": series,
+		"prev": prev,
+	}
 
 
 # --------------------------------------------------------------------------- #
@@ -145,6 +191,12 @@ def _section(fn, ctx):
 		# keep the "not permitted" popup from surfacing for a card we simply hide
 		frappe.local.message_log = []
 		return {"denied": 1}
+	except Exception:
+		# One broken card (e.g. a field missing on this ERPNext version) must not
+		# take the whole dashboard down: log it and let the card show an error.
+		frappe.local.message_log = []
+		frappe.log_error(title=f"Benchmark dashboard: {fn.__name__}")
+		return {"error": 1}
 
 
 def _resolve_filters(company=None, from_date=None, to_date=None):
@@ -187,7 +239,8 @@ def _build(name, sections, company, from_date, to_date, refresh):
 	data = {section: _section(fn, ctx) for section, fn in sections.items()}
 	data["filters"] = f
 	data["generated_at"] = now_datetime()
-	cache.set_value(key, data, expires_in_sec=CACHE_TTL)
+	if not any(isinstance(v, dict) and v.get("error") for v in data.values()):
+		cache.set_value(key, data, expires_in_sec=CACHE_TTL)
 	return data
 
 
@@ -197,7 +250,19 @@ def get_filter_options():
 	default = frappe.defaults.get_user_default("Company")
 	if default not in [c.name for c in companies]:
 		default = companies[0].name if companies else None
-	return {"companies": companies, "default_company": default}
+	return {"companies": companies, "default_company": default, "fiscal_year": _fiscal_year(default)}
+
+
+def _fiscal_year(company):
+	"""Current fiscal year as {name, from, to}, or None if ERPNext has none set up."""
+	try:
+		from erpnext.accounts.utils import get_fiscal_year
+
+		fy = get_fiscal_year(today(), company=company, as_dict=True)
+		return {"name": fy.name, "from": fy.year_start_date, "to": fy.year_end_date}
+	except Exception:
+		frappe.local.message_log = []
+		return None
 
 
 # --------------------------------------------------------------------------- #
@@ -313,36 +378,35 @@ def _acc_kpis(c):
 def _acc_trend(c):
 	f = c.f
 	acc = _acc_accounts(c)
+	frame = _trend_frame(f)
 	base = [["company", "=", f.company], ["is_cancelled", "=", 0]]
 	gl = {"dr": "sum(debit)", "cr": "sum(credit)"}
+	zero = [0.0] * len(frame.bucket_keys)
 
-	income = _month_buckets(f.to_date)
-	expense = _month_buckets(f.to_date)
+	def credit_side(r):
+		return flt(r.cr) - flt(r.dr)
+
+	def debit_side(r):
+		return flt(r.dr) - flt(r.cr)
+
+	income = expense = prev_income = zero
 	if acc.income:
-		income = _monthly(
-			"GL Entry",
-			"posting_date",
-			gl,
-			[*base, ["account", "in", list(acc.income)]],
-			f.to_date,
-			lambda r: flt(r.cr) - flt(r.dr),
-		)
+		inc_filters = [*base, ["account", "in", list(acc.income)]]
+		income = _series(frame, "GL Entry", "posting_date", gl, inc_filters, credit_side)
+		prev_income = _series(frame, "GL Entry", "posting_date", gl, inc_filters, credit_side, previous=True)
 	if acc.expense:
-		expense = _monthly(
-			"GL Entry",
-			"posting_date",
-			gl,
-			[*base, ["account", "in", list(acc.expense)]],
-			f.to_date,
-			lambda r: flt(r.dr) - flt(r.cr),
+		expense = _series(
+			frame, "GL Entry", "posting_date", gl, [*base, ["account", "in", list(acc.expense)]], debit_side
 		)
-	return {
-		"months": list(income.keys()),
-		"series": [
-			{"key": "income", "name": _("Income"), "values": list(income.values())},
-			{"key": "expense", "name": _("Expense"), "values": list(expense.values())},
+
+	return _trend_payload(
+		frame,
+		[
+			{"key": "income", "name": _("Income"), "values": income},
+			{"key": "expense", "name": _("Expense"), "values": expense},
 		],
-	}
+		prev_income,
+	)
 
 
 def _acc_expense_breakdown(c):
@@ -554,17 +618,24 @@ def _sales_kpis(c):
 
 def _sales_trend(c):
 	f = c.f
+	frame = _trend_frame(f)
 	base = [["company", "=", f.company], ["docstatus", "=", 1]]
 	amt = {"amt": "sum(base_net_total)"}
-	invoiced = _monthly("Sales Invoice", "posting_date", amt, base, f.to_date, lambda r: flt(r.amt))
-	quoted = _monthly("Quotation", "transaction_date", amt, base, f.to_date, lambda r: flt(r.amt))
-	return {
-		"months": list(invoiced.keys()),
-		"series": [
-			{"key": "invoiced", "name": _("Invoiced"), "values": list(invoiced.values())},
-			{"key": "quoted", "name": _("Quoted"), "values": list(quoted.values())},
+
+	def value(r):
+		return flt(r.amt)
+
+	invoiced = _series(frame, "Sales Invoice", "posting_date", amt, base, value)
+	prev_invoiced = _series(frame, "Sales Invoice", "posting_date", amt, base, value, previous=True)
+	quoted = _series(frame, "Quotation", "transaction_date", amt, base, value)
+	return _trend_payload(
+		frame,
+		[
+			{"key": "invoiced", "name": _("Invoiced"), "values": invoiced},
+			{"key": "quoted", "name": _("Quoted"), "values": quoted},
 		],
-	}
+		prev_invoiced,
+	)
 
 
 def _sales_funnel(c):
@@ -867,6 +938,36 @@ def _proj_due_tasks(c):
 	return {"rows": rows}
 
 
+def _proj_trend(c):
+	"""Tasks completed vs tasks falling due, per bucket of the selected period."""
+	f = c.f
+	frame = _trend_frame(f)
+	n = {"n": "count(name)"}
+
+	def value(r):
+		return cint(r.n)
+
+	done_filters = [["company", "=", f.company], ["status", "=", "Completed"]]
+	completed = _series(frame, "Task", "completed_on", n, done_filters, value)
+	prev_completed = _series(frame, "Task", "completed_on", n, done_filters, value, previous=True)
+	due = _series(
+		frame,
+		"Task",
+		"exp_end_date",
+		n,
+		[["company", "=", f.company], ["status", "not in", ["Cancelled", "Template"]]],
+		value,
+	)
+	return _trend_payload(
+		frame,
+		[
+			{"key": "completed", "name": _("Completed"), "values": completed},
+			{"key": "due", "name": _("Due"), "values": due},
+		],
+		prev_completed,
+	)
+
+
 def _proj_subcontract(c):
 	f = c.f
 	period = [
@@ -885,6 +986,7 @@ PROJECT_SECTIONS = {
 	"kpis": _proj_kpis,
 	"status": _proj_status,
 	"projects": _proj_list,
+	"trend": _proj_trend,
 	"budget": _proj_budget,
 	"task_status": _proj_task_status,
 	"due_tasks": _proj_due_tasks,
