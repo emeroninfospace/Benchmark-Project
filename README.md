@@ -51,3 +51,7 @@ Three workspaces ship with the app, each topped by a live dashboard (a Custom HT
 | Project Dashboard | Project Overview | `benchmark_project.api.dashboard.get_project_dashboard` |
 
 Charts and styling live in `public/js/benchmark_dashboards.js`, loaded on demand by the dashboard blocks (not on every desk page). Responses are cached per user for 2 minutes; the refresh button fetches fresh data. All queries go through `frappe.get_list`, so role and user permissions apply; a card the user can't read shows a "no access" state. After pulling, run `bench migrate` (syncs the workspaces and HTML-block fixtures) and `bench build --app benchmark_project`.
+
+### Letter head
+
+The app installs the **Benchmark Building Contracting** Letter Head (header and footer artwork in `public/images/letterhead/`) and sets it as the default. The Benchmark print formats (Quotation Benchmark, Proforma Invoice, BOQ, Bill of Quantity) reserve PDF space for it, repeat the footer on every page and print a faint logo watermark, only when a letter head is selected. Replace the PNGs with higher-resolution artwork (same file names) for sharper printing.

@@ -198,6 +198,10 @@ fixtures = [
                 "Project Overview"
             ]]
         ]
+    },
+    {
+        "dt": "Letter Head",
+        "filters": [["name", "in", ["Benchmark Building Contracting"]]]
     }
 ]
 
