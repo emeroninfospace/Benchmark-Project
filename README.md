@@ -51,3 +51,12 @@ Three workspaces ship with the app, each topped by a live dashboard (a Custom HT
 | Project Dashboard | Project Overview | `benchmark_project.api.dashboard.get_project_dashboard` |
 
 Charts and styling live in `public/js/benchmark_dashboards.js`, loaded on demand by the dashboard blocks (not on every desk page). Responses are cached per user for 2 minutes; the refresh button fetches fresh data. All queries go through `frappe.get_list`, so role and user permissions apply; a card the user can't read shows a "no access" state. After pulling, run `bench migrate` (syncs the workspaces and HTML-block fixtures) and `bench build --app benchmark_project`.
+
+### Letter head
+
+The app installs the **Benchmark Building Contracting** Letter Head (header and footer artwork in `public/images/letterhead/`) and uses it for every print format of every doctype:
+
+- `benchmark_project/letterhead.py` (hooked as `pdf_body_html`) adds the header when a format ignores letter heads, repeats the footer on every PDF page, sets PDF margins for the artwork and prints a faint logo watermark. It only acts when this letter head is selected; "No Letterhead" or another letter head prints unchanged.
+- The patch `set_benchmark_letter_head` (runs once on `bench migrate`) makes it the default and every Company's default letter head, turns on *Repeat Header and Footer* in Print Settings, and points existing documents that stored another letter head at it.
+
+Replace the PNGs with higher-resolution artwork (same file names) for sharper printing.

@@ -187,6 +187,10 @@ app_include_js = [
     "/assets/benchmark_project/js/workspace_supervisor.js"
 ]
 
+# Apply the Benchmark letter head (header, footer on every page, PDF margins,
+# watermark) to every print format of every doctype.
+pdf_body_html = ["benchmark_project.letterhead.pdf_body_html"]
+
 fixtures = [
     {
         "dt": "Custom HTML Block",
@@ -198,6 +202,10 @@ fixtures = [
                 "Project Overview"
             ]]
         ]
+    },
+    {
+        "dt": "Letter Head",
+        "filters": [["name", "in", ["Benchmark Building Contracting"]]]
     }
 ]
 

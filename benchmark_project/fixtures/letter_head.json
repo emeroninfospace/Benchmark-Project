@@ -1,0 +1,15 @@
+[
+ {
+  "content": "<div class=\"bm-letterhead-header\" style=\"width: 100%; text-align: center;\"><img src=\"/assets/benchmark_project/images/letterhead/benchmark_header.png\" alt=\"Benchmark Building Contracting (S.P.S - L.L.C)\" style=\"width: 100%; height: auto; display: block;\"></div>",
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Letter Head",
+  "footer": "<div class=\"bm-letterhead-footer\" style=\"width: 100%; text-align: center;\"><img src=\"/assets/benchmark_project/images/letterhead/benchmark_footer.png\" alt=\"Benchmark Building Contracting - contact details\" style=\"width: 100%; height: auto; display: block;\"></div>",
+  "footer_source": "HTML",
+  "is_default": 1,
+  "letter_head_name": "Benchmark Building Contracting",
+  "modified": "2026-11-26 16:00:00.000000",
+  "name": "Benchmark Building Contracting",
+  "source": "HTML"
+ }
+]
