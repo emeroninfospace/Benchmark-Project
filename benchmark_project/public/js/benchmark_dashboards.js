@@ -133,6 +133,17 @@
 .tone-critical .ic { color: var(--bad-ink); background: color-mix(in srgb, var(--critical) 14%, transparent); }
 .tone-info .ic { color: var(--s1); background: color-mix(in srgb, var(--s1) 13%, transparent); }
 
+/* empty-period notice */
+.bmd-notice { display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:14px 16px; margin:0 0 16px; border-radius:14px; border:1px solid color-mix(in srgb, var(--s1) 30%, var(--line)); background: linear-gradient(135deg, color-mix(in srgb, var(--s1) 8%, var(--card-bg, #fff)), color-mix(in srgb, var(--s7) 8%, var(--card-bg, #fff))); animation: bmd-in .5s var(--ease) both; }
+.bmd-notice .ic { width:36px; height:36px; border-radius:10px; display:grid; place-items:center; color:#fff; background: linear-gradient(135deg, var(--hero-a), var(--hero-b)); flex:none; }
+.bmd-notice .ic svg { width:18px; height:18px; }
+.bmd-notice .tx { flex:1; min-width:220px; font-size:12.5px; color: var(--ink-2); }
+.bmd-notice .tx b { color: var(--ink); font-weight:600; }
+.bmd-notice .tx .h { font-size:13.5px; color: var(--ink); font-weight:600; margin-bottom:2px; }
+.bmd-notice .acts { display:flex; gap:8px; flex-wrap:wrap; }
+.bmd-notice .bmd-btn.primary { background: linear-gradient(135deg, var(--hero-a), var(--hero-b)); color:#fff; border:0; font-weight:600; }
+.bmd-notice .bmd-btn.primary svg { color:#fff; }
+
 /* ---------- grid ---------- */
 .bmd-grid { display:grid; grid-template-columns: repeat(12, minmax(0,1fr)); gap:16px; }
 .bmd-grid.enter > * { animation: bmd-in .55s var(--ease) both; animation-delay: calc(var(--i, 0) * 55ms); }
@@ -141,8 +152,8 @@
 @keyframes bmd-fade { from { opacity:.25; } }
 @keyframes bmd-pop { from { opacity:0; transform: scale(.6) rotate(-8deg); } }
 .c3{grid-column:span 3}.c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c8{grid-column:span 8}.c12{grid-column:span 12}
-@container (max-width: 1080px) { .c3,.c4,.c5{grid-column:span 6} .c7,.c8{grid-column:span 12} }
-@container (max-width: 720px) { .c3,.c4,.c5,.c6,.c7,.c8{grid-column:span 12} .bmd-tiles{grid-template-columns: repeat(2, minmax(0,1fr)) !important;} .bmd-tile-spark { display:none; } }
+@container (max-width: 1080px) { .c3,.c4,.c5{grid-column:span 6} .c7,.c8{grid-column:span 12} .bmd-hero.c4{grid-column:span 5} .bmd-tiles.c8{grid-column:span 7; grid-template-columns: repeat(2, minmax(0,1fr));} .bmd-tile-spark{display:none} }
+@container (max-width: 720px) { .c3,.c4,.c5,.c6,.c7,.c8,.bmd-hero.c4,.bmd-tiles.c8{grid-column:span 12} .bmd-tiles{grid-template-columns: repeat(2, minmax(0,1fr)) !important;} .bmd-tile-spark { display:none; } }
 
 /* ---------- cards ---------- */
 .bmd-card { background: var(--surface); border:1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding:16px 18px; min-width:0; display:flex; flex-direction:column; transition: box-shadow .25s, border-color .25s; }
@@ -405,13 +416,30 @@
 		String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 	const num = (v) => (isFinite(+v) ? +v : 0);
 
+	const RTL = /[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/;
+	const symbolCache = {};
+	/** Currency prefix. Right-to-left symbols (e.g. AED "د.إ") reorder around digits, so use the code. */
 	function symbolFor(cur) {
+		if (!cur) return "";
+		if (cur in symbolCache) return symbolCache[cur];
+		let sym = "";
 		try {
-			if (typeof window.get_currency_symbol === "function") return window.get_currency_symbol(cur) || cur || "";
+			if (typeof window.get_currency_symbol === "function") sym = window.get_currency_symbol(cur) || "";
 		} catch (e) {
-			/* ignore */
+			sym = "";
 		}
-		return cur ? cur + " " : "";
+		if (!sym || RTL.test(sym)) sym = cur + " ";
+		else if (/^[A-Za-z]{2,}$/.test(sym)) sym += " ";
+		return (symbolCache[cur] = sym);
+	}
+
+	function plainNumber(v, decimals) {
+		try {
+			if (typeof window.format_number === "function") return window.format_number(v, null, decimals);
+		} catch (e) {
+			/* fall through */
+		}
+		return v.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 	}
 
 	function compact(v, digits = 1) {
@@ -431,10 +459,7 @@
 
 	function money(v, cur, full) {
 		v = num(v);
-		if (full) {
-			if (typeof window.format_currency === "function") return window.format_currency(v, cur);
-			return symbolFor(cur) + v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-		}
+		if (full) return (v < 0 ? "-" : "") + symbolFor(cur) + plainNumber(Math.abs(v), 2);
 		return (v < 0 ? "-" : "") + symbolFor(cur) + compact(Math.abs(v));
 	}
 
@@ -477,7 +502,7 @@
 	}
 	const vsPrev = (cur, prev, upGood) => {
 		const d = deltaHtml(cur, prev, upGood);
-		return d ? `${d}<span>${esc(t("vs prev. period"))}</span>` : `<span>${esc(t("No prior data"))}</span>`;
+		return d ? `${d}<span>${esc(t("vs prev. period"))}</span>` : `<span>${esc(t("No activity in either period"))}</span>`;
 	};
 
 	/* ------------------------------------------------------------------ */
@@ -875,7 +900,7 @@
 		const W = Math.max(60, host.clientWidth || 200);
 		const H = host.clientHeight || 40;
 		const v = values.map(num);
-		if (v.length < 2) return (host.innerHTML = "");
+		if (v.length < 2 || v.every((x) => x === 0)) return (host.innerHTML = "");
 		const lo = Math.min(...v);
 		const hi = Math.max(...v);
 		const pad = 4;
@@ -1147,6 +1172,7 @@
 					</div>
 				</div>
 				<div data-error></div>
+				<div data-notice></div>
 				<div class="bmd-insights" data-insights style="display:none"></div>
 				<div class="bmd-grid">${this.def.skeleton}</div>
 				<div class="bmd-tip" role="tooltip"></div>`;
@@ -1350,6 +1376,7 @@
 			this.def.render(this);
 			[...this.grid.children].forEach((el, i) => el.style.setProperty("--i", i));
 			this.renderInsights(this.def.insights ? this.def.insights(this) : []);
+			this.renderNotice();
 
 			this.drawCharts(!silent);
 			this.runNumbers();
@@ -1357,6 +1384,35 @@
 				requestAnimationFrame(() => this.el.querySelectorAll("[data-dash-to]").forEach((c) => c.setAttribute("stroke-dashoffset", c.dataset.dashTo)))
 			);
 			this.firstRender = false;
+		}
+
+		/** When the period is empty, say whether any data exists and offer to jump to it. */
+		renderNotice() {
+			const box = this.el.querySelector("[data-notice]");
+			box.innerHTML = "";
+			if (!this.def.isEmpty || !this.def.isEmpty(this)) return;
+			const f = this.data.filters;
+			const cov = this.section("coverage");
+			const range = describeRange(f.from_date, f.to_date);
+			let html;
+			const acts = [];
+			if (cov.state === "ok" && cov.data.count && cov.data.first && cov.data.last) {
+				const c = cov.data;
+				html = `<div class="h">${esc(t("Nothing recorded in"))} ${esc(range)}</div>${esc(f.company)} ${esc(t("has"))} <b>${count(c.count)} ${esc(c.label)}</b> ${esc(t("from"))} <b>${esc(fmtDate(c.first, true))}</b> ${esc(t("to"))} <b>${esc(fmtDate(c.last, true))}</b>.`;
+				const last = parseDate(c.last);
+				const latestFrom = monthStart(last);
+				const latestTo = monthEnd(last) > today0() ? today0() : monthEnd(last);
+				acts.push(`<button type="button" class="bmd-btn primary" data-set-range='${esc(JSON.stringify([iso(latestFrom), iso(latestTo)]))}'>${icon("calendar")}${esc(t("Show"))} ${esc(describeRange(latestFrom, latestTo))}</button>`);
+				const first = parseDate(c.first);
+				const allTo = last > today0() ? last : today0();
+				acts.push(`<button type="button" class="bmd-btn" data-set-range='${esc(JSON.stringify([iso(first), iso(allTo)]))}'>${esc(t("Show all data"))}</button>`);
+			} else if (cov.state === "ok") {
+				html = `<div class="h">${esc(t("No data yet"))}</div>${esc(t("No"))} ${esc(cov.data.label)} ${esc(t("found for"))} <b>${esc(f.company)}</b>. ${esc(t(this.def.emptyHint || "Figures appear here as soon as documents are submitted."))}`;
+			} else {
+				html = `<div class="h">${esc(t("Nothing recorded in"))} ${esc(range)}</div>${esc(t("Try a wider date range."))}`;
+				acts.push(`<button type="button" class="bmd-btn primary" data-preset-jump="12m">${icon("calendar")}${esc(t("Last 12 months"))}</button>`);
+			}
+			box.innerHTML = `<div class="bmd-notice" role="status"><span class="ic">${icon("spark")}</span><div class="tx">${html}</div><div class="acts">${acts.join("")}</div></div>`;
 		}
 
 		renderInsights(items) {
@@ -1418,6 +1474,13 @@
 				if (!showTable) this.drawCharts(false);
 				return;
 			}
+			const jump = e.target.closest("[data-set-range]");
+			if (jump) {
+				const [from, to] = JSON.parse(jump.dataset.setRange);
+				return this.setRange({ preset: "custom", from: parseDate(from), to: parseDate(to) });
+			}
+			const presetJump = e.target.closest("[data-preset-jump]");
+			if (presetJump) return this.setRange(this.presetRange(presetJump.dataset.presetJump));
 			const el = e.target.closest("[data-route]");
 			if (el) this.go(JSON.parse(el.dataset.route));
 		}
@@ -1597,6 +1660,11 @@
 		icon: "bank",
 		method: "get_accounting_dashboard",
 		skeleton: SKELETON,
+		emptyHint: "Ledger entries are created when invoices, payments and journal entries are submitted.",
+		isEmpty(d) {
+			const k = d.section("kpis");
+			return k.state === "ok" && !num(k.data.income) && !num(k.data.expense);
+		},
 		insights(d) {
 			const out = [];
 			const k = d.section("kpis");
@@ -1646,7 +1714,7 @@
 					value: d.moneyNum("net_profit", x.net_profit),
 					title: d.money(x.net_profit, true),
 					meta: vsPrev(x.net_profit, x.prev_net_profit, true),
-					extra: `<div class="bmd-hero-meta" style="margin-top:8px"><span>${esc(t("Net margin"))} <b>${d.num("margin", margin, (v) => pct(v, 1))}</b></span></div>`,
+					extra: x.income ? `<div class="bmd-hero-meta" style="margin-top:8px"><span>${esc(t("Net margin"))} <b>${d.num("margin", margin, (v) => pct(v, 1))}</b></span></div>` : "",
 					spark: trend ? trend.series[0].values.map((v, i) => num(v) - num(trend.series[1].values[i])) : null,
 				});
 				d.tiles("c8", [
@@ -1786,6 +1854,11 @@
 		icon: "target",
 		method: "get_sales_dashboard",
 		skeleton: SKELETON,
+		emptyHint: "Sales figures appear once quotations and sales invoices are submitted.",
+		isEmpty(d) {
+			const k = d.section("kpis");
+			return k.state === "ok" && !num(k.data.sales) && !num(k.data.quoted) && !num(k.data.leads);
+		},
 		insights(d) {
 			const out = [];
 			const k = d.section("kpis");
@@ -1967,6 +2040,11 @@
 		icon: "folder",
 		method: "get_project_dashboard",
 		skeleton: SKELETON,
+		emptyHint: "Create a project (or one from a quotation) to see it here.",
+		isEmpty(d) {
+			const k = d.section("kpis");
+			return k.state === "ok" && !num(k.data.active) && !num(k.data.open_tasks) && !num(k.data.completed);
+		},
 		insights(d) {
 			const out = [];
 			const k = d.section("kpis");
