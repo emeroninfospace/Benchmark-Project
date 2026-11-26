@@ -54,4 +54,9 @@ Charts and styling live in `public/js/benchmark_dashboards.js`, loaded on demand
 
 ### Letter head
 
-The app installs the **Benchmark Building Contracting** Letter Head (header and footer artwork in `public/images/letterhead/`) and sets it as the default. The Benchmark print formats (Quotation Benchmark, Proforma Invoice, BOQ, Bill of Quantity) reserve PDF space for it, repeat the footer on every page and print a faint logo watermark, only when a letter head is selected. Replace the PNGs with higher-resolution artwork (same file names) for sharper printing.
+The app installs the **Benchmark Building Contracting** Letter Head (header and footer artwork in `public/images/letterhead/`) and uses it for every print format of every doctype:
+
+- `benchmark_project/letterhead.py` (hooked as `pdf_body_html`) adds the header when a format ignores letter heads, repeats the footer on every PDF page, sets PDF margins for the artwork and prints a faint logo watermark. It only acts when this letter head is selected; "No Letterhead" or another letter head prints unchanged.
+- The patch `set_benchmark_letter_head` (runs once on `bench migrate`) makes it the default and every Company's default letter head, turns on *Repeat Header and Footer* in Print Settings, and points existing documents that stored another letter head at it.
+
+Replace the PNGs with higher-resolution artwork (same file names) for sharper printing.
